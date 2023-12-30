@@ -46,6 +46,9 @@ public class Talent {
     @JoinColumn(name = "talent_status_id")
     private TalentStatus talentStatusId;
 
+    @OneToOne(mappedBy = "talent", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private TalentMetadata talentMetadata;
+
     @Column(name = "employee_status_id")
     private UUID employeeStatusId;
 

@@ -1,17 +1,17 @@
 package com.tujuhsembilan.app.controller;
 
 import com.tujuhsembilan.app.configuration.JwtUtils;
-import com.tujuhsembilan.app.dto.PositionDTO;
-import com.tujuhsembilan.app.dto.SkillsetDTO;
-import com.tujuhsembilan.app.dto.TalentDTO;
-import com.tujuhsembilan.app.dto.TalentWishlistDTO;
+import com.tujuhsembilan.app.dto.*;
 import com.tujuhsembilan.app.model.*;
+import com.tujuhsembilan.app.repository.TalentMetadataRepository;
 import com.tujuhsembilan.app.repository.TalentRepository;
 import com.tujuhsembilan.app.repository.TalentWishlistRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -40,20 +39,24 @@ public class TalentController {
     private final TalentWishlistRepository talentWishlistRepository;
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
+    private final TalentMetadataRepository talentMetadataRepository;
 
     @Autowired
     public TalentController(TalentRepository talentRepository,
                             TalentWishlistRepository talentWishlistRepository,
                             UserRepository userRepository,
-                            JwtUtils jwtUtils) {
+                            JwtUtils jwtUtils,
+                            TalentMetadataRepository talentMetadataRepository) {
         this.talentRepository = talentRepository;
         this.talentWishlistRepository = talentWishlistRepository;
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
+        this.talentMetadataRepository = talentMetadataRepository;
     }
 
     //DisplayTalents
     @GetMapping
+    @Transactional
     public Page<TalentDTO> getAllTalents(
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "talentLevelName", required = false) String talentLevelName,
@@ -94,7 +97,7 @@ public class TalentController {
             if (talentExperienceParams.length > 1) {
                 talentExperienceSort = "asc".equalsIgnoreCase(talentExperienceParams[1]) ? talentExperienceSort.ascending() : talentExperienceSort.descending();
             }
-            finalSort = talentExperienceSort.and(Sort.by("talentLevelId.talentLevel").descending());
+            finalSort = talentExperienceSort.and(Sort.by("talentLevelId.talentLevelName").descending());
 //            System.out.println("Talent Experience Sort: " + talentExperienceSort);
 //            System.out.println("Talent Level Sort: " + Sort.by("talentLevelId.talentLevel").descending());
         }
@@ -175,6 +178,7 @@ public class TalentController {
 
     //POST Add Talent To Wishlist
     @PostMapping("/add-to-list")
+    @Transactional
     public ResponseEntity<String> addTalentToWishlist(@RequestBody TalentWishlistDTO talentWishlistDTO,
                                                       HttpServletRequest request) {
         try {
@@ -212,5 +216,25 @@ public class TalentController {
     private UUID getUserIdFromToken(HttpServletRequest servletRequest) {
         String token = jwtUtils.extractTokenFromRequest(servletRequest);
         return (token != null && jwtUtils.validateToken(token)) ? jwtUtils.getUserIdFromToken(token) : null;
+    }
+
+    //API PUT Count Profile
+    @PutMapping("/profile-count")
+    @Transactional
+    public ResponseEntity<String> putCountProfile(@RequestBody ProfileCounterDTO profileCounterDTO){
+        try {
+            TalentMetadata talentMetadata = talentMetadataRepository.findById(profileCounterDTO.getTalentId())
+                    .orElseThrow(() -> new EntityNotFoundException("Talent not found with id: " + profileCounterDTO.getTalentId()));
+
+            talentMetadata.setProfileCounter(talentMetadata.getProfileCounter() + 1);
+            talentMetadataRepository.save(talentMetadata);
+
+            return ResponseEntity.ok("Counting profile with id " + talentMetadata.getTalent().getTalentId() + " is " + talentMetadata.getProfileCounter());
+
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating profile counter: " + e.getMessage());
+        }
     }
 }
