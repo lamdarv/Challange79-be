@@ -1,14 +1,15 @@
 package com.tujuhsembilan.app.controller;
 
 import com.tujuhsembilan.app.configuration.JwtUtils;
-import com.tujuhsembilan.app.dto.*;
+import com.tujuhsembilan.app.dto.PositionDTO;
+import com.tujuhsembilan.app.dto.ProfileCounterDTO;
+import com.tujuhsembilan.app.dto.SkillsetDTO;
+import com.tujuhsembilan.app.dto.TalentDTO;
 import com.tujuhsembilan.app.model.*;
 import com.tujuhsembilan.app.repository.*;
-import com.tujuhsembilan.app.service.DisplayWishlistTalentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,13 +20,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -35,7 +33,6 @@ import java.util.stream.Collectors;
 public class TalentController {
     private final TalentRepository talentRepository;
     private final TalentWishlistRepository talentWishlistRepository;
-    private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
     private final TalentMetadataRepository talentMetadataRepository;
     private final DisplayWishlistTalentRepository displayWishlistTalentRepository;
@@ -49,14 +46,12 @@ public class TalentController {
                             DisplayWishlistTalentRepository displayWishlistTalentRepository) {
         this.talentRepository = talentRepository;
         this.talentWishlistRepository = talentWishlistRepository;
-        this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
         this.talentMetadataRepository = talentMetadataRepository;
         this.displayWishlistTalentRepository = displayWishlistTalentRepository;
     }
 
-    @Autowired
-    private DisplayWishlistTalentService displayWishlistTalentService;
+
 
     //DisplayTalents
     @GetMapping("/talents")
@@ -178,47 +173,6 @@ public class TalentController {
         return dto;
     }
 
-    //POST Add Talent To Wishlist
-    @PostMapping("/talents/add-to-list")
-    @Transactional
-    public ResponseEntity<String> addTalentToWishlist(@RequestBody TalentWishlistDTO talentWishlistDTO,
-                                                      HttpServletRequest request) {
-        try {
-            UUID userId = getUserIdFromToken(request);
-            if (userId == null) {
-                return new ResponseEntity<>("Invalid token.", HttpStatus.UNAUTHORIZED);
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-            UUID clientId = user.getClient().getClientId();
-
-            // Find the Talent entity
-            Talent talent = talentRepository.findById(talentWishlistDTO.getTalentId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Talent not found"));
-
-            TalentWishlist talentWishlist = TalentWishlist.builder()
-                    .talent(talent)
-                    .clientId(clientId)
-                    .wishlistDate(LocalDateTime.now())
-                    .isActive(true)
-                    .build();
-
-            talentWishlistRepository.save(talentWishlist);
-
-            return ResponseEntity.ok(talent.getTalentName() + " with id " + talent.getTalentId() + " successfully added to wishlist!");
-
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error adding talent to wishlist! " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private UUID getUserIdFromToken(HttpServletRequest servletRequest) {
-        String token = jwtUtils.extractTokenFromRequest(servletRequest);
-        return (token != null && jwtUtils.validateToken(token)) ? jwtUtils.getUserIdFromToken(token) : null;
-    }
-
     //API PUT Count Profile
     @PutMapping("/talents/profile-count")
     @Transactional
@@ -239,16 +193,7 @@ public class TalentController {
         }
     }
 
-    //API GET Display Daftar Wishlist Talent
-    @GetMapping("/wishlists")
-    @Transactional
-    public ResponseEntity<Page<DisplayWishlistTalentDTO>> getAllWishlistTalents(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<DisplayWishlistTalentDTO> result = displayWishlistTalentService.getAllWishlistTalents(pageable);
 
-        return ResponseEntity.ok(result);
-    }
+
 }
