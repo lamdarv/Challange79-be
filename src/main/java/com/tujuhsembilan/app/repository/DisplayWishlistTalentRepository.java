@@ -15,6 +15,9 @@ import java.util.UUID;
 public interface DisplayWishlistTalentRepository extends JpaRepository<TalentWishlist, UUID> {
 //    @Query("SELECT t.talentName FROM TalentWishlist w JOIN w.talent t WHERE t.talentId = :talentId")
 //    Optional<String> findTalentNameByTalentId(@Param("talentId") UUID talentId);
+
+    // Get daftar berdasarkan client_id
+    Page<TalentWishlist> findByClientIdAndIsActive(UUID clientId, boolean isActive, Pageable pageable);
 }
 
 

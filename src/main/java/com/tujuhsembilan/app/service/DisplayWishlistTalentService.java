@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,8 +38,8 @@ public class DisplayWishlistTalentService {
     private SkillsetRepository skillsetRepository;
 
 
-    public Page<DisplayWishlistTalentDTO> getAllWishlistTalents(Pageable pageable) {
-        Page<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findAll(pageable);
+    public Page<DisplayWishlistTalentDTO> getAllWishlistTalentsByClientId(UUID clientId, boolean isActive, Pageable pageable) {
+        Page<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findByClientIdAndIsActive(clientId,true ,pageable); // Metode baru
         List<DisplayWishlistTalentDTO> sortedList = talentWishlists.getContent()
                 .stream()
                 .map(this::mapToDTO)

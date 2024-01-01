@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,9 @@ public interface TalentWishlistRepository extends JpaRepository<TalentWishlist, 
 //    Optional<Talent> findTalentNameByTalentId(UUID talentId);
     @Query("SELECT t FROM TalentWishlist w JOIN w.talent t WHERE t.talentId = :talentId")
     Optional<Talent> findTalentByTalentId(@Param("talentId") UUID talentId);
+
+    @Query("SELECT w FROM TalentWishlist w WHERE w.clientId = :clientId")
+    List<TalentWishlist> findAllByClientId(@Param("clientId") UUID clientId);
 
     @Modifying
     @Query("UPDATE TalentWishlist w SET w.isActive = false WHERE w.talentWishlistId = :talentWishlistId")

@@ -4,14 +4,20 @@ import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.DisplayWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.RemoveWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.TalentWishlistDTO;
+import com.tujuhsembilan.app.model.Client;
 import com.tujuhsembilan.app.model.Talent;
 import com.tujuhsembilan.app.model.TalentWishlist;
 import com.tujuhsembilan.app.model.User;
-import com.tujuhsembilan.app.repository.*;
+import com.tujuhsembilan.app.repository.TalentRepository;
+import com.tujuhsembilan.app.repository.TalentWishlistRepository;
+import com.tujuhsembilan.app.repository.UserRepository;
+//import com.tujuhsembilan.app.service.ClientService;
 import com.tujuhsembilan.app.service.DisplayWishlistTalentService;
 import com.tujuhsembilan.app.service.TalentWishlistService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
+//import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/talent-management")
@@ -37,6 +45,8 @@ public class TalentWishlistController {
 
     @Autowired
     private DisplayWishlistTalentService displayWishlistTalentService;
+
+    private static final Logger log = LoggerFactory.getLogger(TalentWishlistController.class);
 
     @Autowired
     public TalentWishlistController(UserRepository userRepository,
@@ -90,17 +100,36 @@ public class TalentWishlistController {
         return (token != null && jwtUtils.validateToken(token)) ? jwtUtils.getUserIdFromToken(token) : null;
     }
 
-    //GET Display Daftar Wishlist Talent
+    //GET Display Daftar Wishlist Talent By User Id
     @GetMapping("/wishlists")
     @Transactional
-    public ResponseEntity<Page<DisplayWishlistTalentDTO>> getAllWishlistTalents(
+    public ResponseEntity<Page<DisplayWishlistTalentDTO>> getWishlistTalentsByUserId(
+            @RequestParam UUID user_id,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size){
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<DisplayWishlistTalentDTO> result = displayWishlistTalentService.getAllWishlistTalents(pageable);
+        log.info("Looking up wishlist talents for user ID: {}", user_id);
+        Optional<User> optionalUser = userRepository.findById(user_id);
+        if(optionalUser.isPresent()){
+            User user = optionalUser.get();
+            Client client = user.getClient();
 
-        return ResponseEntity.ok(result);
+            if (client != null){
+                UUID clientId = client.getClientId();
+                log.info("Client ID: {}", clientId);
+
+                Pageable pageable = PageRequest.of(page, size);
+                Page<DisplayWishlistTalentDTO> result = displayWishlistTalentService.getAllWishlistTalentsByClientId(clientId, true, pageable);
+
+                return ResponseEntity.ok(result);
+            } else {
+                log.warn("No client associated with user ID: {}", user_id);
+                return ResponseEntity.notFound().build(); // atau return appropriate error response
+            }
+        } else {
+            log.warn("User not found for ID: {}", user_id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     //POST Remove Wishlist
@@ -114,6 +143,29 @@ public class TalentWishlistController {
             return ResponseEntity
                     .status(e.getStatusCode())
                     .body(e.getReason());
+        }
+    }
+
+    //POST Remove All Wishlist
+    @PostMapping("/wishlists/remove-all")
+    @Transactional
+    public ResponseEntity<String> removeAllWishlist(@RequestParam UUID userId){
+        try {
+            Optional<User> optionalUser = userRepository.findById(userId);
+
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                UUID clientId = user.getClient().getClientId();
+
+                // Deactivate all wishlists for the given clientId
+                talentWishlistService.removeAllWishlist(clientId);
+
+                return ResponseEntity.ok("All wishlists successfully deactivated for user ID: " + userId);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while deactivating wishlists");
         }
     }
 }
