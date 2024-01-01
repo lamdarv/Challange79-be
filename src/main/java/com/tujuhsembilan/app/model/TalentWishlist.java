@@ -26,8 +26,13 @@ public class TalentWishlist {
     @Column(name = "talent_wishlist_id", updatable = false, nullable = false)
     private UUID talentWishlistId;
 
-    @Column(name = "talent_id")
-    private UUID talentId;
+//    @Column(name = "talent_id")
+//    private UUID talentId;
+
+    @ManyToOne
+    @JoinColumn(name = "talent_id")
+    private Talent talent;
+
 
     @Column(name = "client_id")
     private UUID clientId;
