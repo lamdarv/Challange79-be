@@ -4,6 +4,8 @@ import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.DisplayWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.RemoveWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.TalentWishlistDTO;
+import com.tujuhsembilan.app.dto.talentRequest.WishlistRequestDTO;
+import com.tujuhsembilan.app.dto.talentRequest.WishlistResponseDTO;
 import com.tujuhsembilan.app.model.Client;
 import com.tujuhsembilan.app.model.Talent;
 import com.tujuhsembilan.app.model.TalentWishlist;
@@ -11,7 +13,6 @@ import com.tujuhsembilan.app.model.User;
 import com.tujuhsembilan.app.repository.TalentRepository;
 import com.tujuhsembilan.app.repository.TalentWishlistRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
-//import com.tujuhsembilan.app.service.ClientService;
 import com.tujuhsembilan.app.service.DisplayWishlistTalentService;
 import com.tujuhsembilan.app.service.TalentWishlistService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -166,6 +167,22 @@ public class TalentWishlistController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while deactivating wishlists");
+        }
+    }
+
+    //POST Request Talent
+    @PostMapping("/wishlists/request")
+    @Transactional
+    public ResponseEntity<WishlistResponseDTO> createWishlistRequest(@RequestBody WishlistRequestDTO request) {
+        try {
+            // Assuming that the userId is passed directly as a UUID in the request body
+            UUID userId = request.getUserId();
+            WishlistResponseDTO response = talentWishlistService.handleNewWishlistRequest(userId, request.getWishlist());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Log the exception for debugging and return a generic error response
+            // You should log the actual exception message and stack trace here
+            return ResponseEntity.internalServerError().body(new WishlistResponseDTO(null, "An error occurred while processing the request."));
         }
     }
 }

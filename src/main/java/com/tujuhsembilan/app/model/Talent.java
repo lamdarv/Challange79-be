@@ -129,4 +129,14 @@ public class Talent {
 
     @Column(name = "total_project_completed")
     private Integer totalProjectCompleted;
+
+    // Business method to check availability
+    public boolean isAvailable() {
+        return Boolean.TRUE.equals(this.talentAvailability);
+    }
+
+    // Business method to set availability
+    public void setAvailability(boolean availability) {
+        this.talentAvailability = availability;
+    }
 }

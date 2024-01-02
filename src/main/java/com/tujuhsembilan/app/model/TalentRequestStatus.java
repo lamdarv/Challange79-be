@@ -15,46 +15,32 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "talent_wishlist")
+@Table(name = "talent_request_status")
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class TalentWishlist {
-
+public class TalentRequestStatus {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "talent_wishlist_id", updatable = false, nullable = false)
-    private UUID talentWishlistId;
+    @Column(name = "talent_request_status_id", updatable = false, nullable = false)
+    private UUID talentRequestStatusId;
 
-    @ManyToOne
-    @JoinColumn(name = "talent_id")
-    private Talent talent;
-
-
-    @Column(name = "client_id")
-    private UUID clientId;
-
-    @Column(name = "wishlist_date")
-    private LocalDateTime wishlistDate;
+    @Column(name = "talent_request_status_name", length = 255)
+    private String talentRequestStatusName;
 
     @Column(name = "is_active")
     private Boolean isActive;
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", length = 50)
     private String createdBy;
 
     @Column(name = "created_time")
     private LocalDateTime createdTime;
 
-    @Column(name = "last_modified_by")
+    @Column(name = "last_modified_by", length = 50)
     private String lastModifiedBy;
 
     @Column(name = "last_modified_time")
     private LocalDateTime lastModifiedTime;
 
-    // Business method to deactivate
-    public void deactivate() {
-        this.isActive = false;
-    }
 }
-
