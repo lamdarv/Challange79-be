@@ -1,14 +1,12 @@
 package com.tujuhsembilan.app.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -26,10 +24,13 @@ public class TalentWishlist {
     @Column(name = "talent_wishlist_id", updatable = false, nullable = false)
     private UUID talentWishlistId;
 
-    @ManyToOne
-    @JoinColumn(name = "talent_id")
-    private Talent talent;
+    @ToString.Exclude
+    @OneToMany(mappedBy = "talentWishlist")
+    private List<TalentRequest> talentRequests;
 
+    @ManyToOne
+    @JoinColumn(name = "talent_id", referencedColumnName = "talent_id")
+    private Talent talent;
 
     @Column(name = "client_id")
     private UUID clientId;

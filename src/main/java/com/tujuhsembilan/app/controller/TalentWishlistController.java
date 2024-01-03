@@ -4,6 +4,7 @@ import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.DisplayWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.RemoveWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.TalentWishlistDTO;
+import com.tujuhsembilan.app.dto.talentRequest.DisplayRequestTalentDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistRequestDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistResponseDTO;
 import com.tujuhsembilan.app.model.Client;
@@ -13,6 +14,7 @@ import com.tujuhsembilan.app.model.User;
 import com.tujuhsembilan.app.repository.TalentRepository;
 import com.tujuhsembilan.app.repository.TalentWishlistRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
+import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import com.tujuhsembilan.app.service.DisplayWishlistTalentService;
 import com.tujuhsembilan.app.service.TalentWishlistService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +48,9 @@ public class TalentWishlistController {
 
     @Autowired
     private DisplayWishlistTalentService displayWishlistTalentService;
+
+    @Autowired
+    private DisplayRequestTalentService displayRequestTalentService;
 
     private static final Logger log = LoggerFactory.getLogger(TalentWishlistController.class);
 
@@ -175,14 +180,43 @@ public class TalentWishlistController {
     @Transactional
     public ResponseEntity<WishlistResponseDTO> createWishlistRequest(@RequestBody WishlistRequestDTO request) {
         try {
-            // Assuming that the userId is passed directly as a UUID in the request body
             UUID userId = request.getUserId();
             WishlistResponseDTO response = talentWishlistService.handleNewWishlistRequest(userId, request.getWishlist());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Log the exception for debugging and return a generic error response
-            // You should log the actual exception message and stack trace here
             return ResponseEntity.internalServerError().body(new WishlistResponseDTO(null, "An error occurred while processing the request."));
+        }
+    }
+
+    @GetMapping("/requests")
+    @Transactional
+    public ResponseEntity<Page<DisplayRequestTalentDTO>> getTalentRequestByUserId(
+            @RequestParam UUID user_id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status){
+
+        log.info("Looking up talents request for user ID: {} with status: {}", user_id, status);
+        Optional<User> optionalUser = userRepository.findById(user_id);
+        if(optionalUser.isPresent()){
+            User user = optionalUser.get();
+            Client client = user.getClient();
+
+            if (client != null){
+                UUID clientId = client.getClientId();
+                log.info("Client ID: {}", clientId);
+
+                Pageable pageable = PageRequest.of(page, size);
+                Page<DisplayRequestTalentDTO> result = displayRequestTalentService.getTalentRequestByClientId(clientId, pageable, status);
+
+                return ResponseEntity.ok(result);
+            } else {
+                log.warn("No client associated with user ID: {}", user_id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            log.warn("User not found for ID: {}", user_id);
+            return ResponseEntity.notFound().build();
         }
     }
 }

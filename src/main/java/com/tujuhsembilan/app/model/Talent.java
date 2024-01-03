@@ -2,9 +2,11 @@ package com.tujuhsembilan.app.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -12,11 +14,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.validation.constraints.Size;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -32,9 +29,13 @@ public class Talent {
     @Column(name = "talent_id")
     private UUID talentId;
 
+    @ToString.Exclude // Exclude from toString
+    @EqualsAndHashCode.Exclude // Exclude from hashCode and equals
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "talent")
     private List<TalentPosition> talentPositions;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "talent")
     private List<TalentSkillset> talentSkillsets;
 
@@ -46,6 +47,7 @@ public class Talent {
     @JoinColumn(name = "talent_status_id")
     private TalentStatus talentStatusId;
 
+    @ToString.Exclude
     @OneToOne(mappedBy = "talent", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     private TalentMetadata talentMetadata;
 
@@ -139,4 +141,6 @@ public class Talent {
     public void setAvailability(boolean availability) {
         this.talentAvailability = availability;
     }
+
+
 }

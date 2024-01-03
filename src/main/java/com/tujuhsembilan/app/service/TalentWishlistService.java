@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class TalentWishlistService {
     @Autowired
@@ -35,6 +38,8 @@ public class TalentWishlistService {
 
     @Autowired
     private TalentRequestStatusRepository talentRequestStatusRepository;
+
+    private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     public void removeWishlist(UUID wishlistId) {
         // Optional: Check if the wishlist item exists before deactivating
@@ -65,8 +70,12 @@ public class TalentWishlistService {
 //        String message = "All wishlists processed successfully.";
 
         for (WishlistItemDTO item : wishlistItems) {
+            log.info("Processing wishlist item with ID: {}", item.getWishlistId());
             TalentWishlist wishlist = talentWishlistRepository.findById(item.getWishlistId())
                     .orElseThrow(() -> new EntityNotFoundException("Wishlist not found for ID: " + item.getWishlistId()));
+
+            log.info("Found wishlist item: {}", wishlist);
+
             if (wishlist != null && wishlist.getTalent().isAvailable()){
                 // Update is_active in TalentWishlist to false
                 wishlist.deactivate();
@@ -86,7 +95,10 @@ public class TalentWishlistService {
                 TalentRequest talentRequest = new TalentRequest();
                 talentRequest.setRequestDate(LocalDateTime.now());
                 talentRequest.setTalentRequestStatus(onProgressStatus);
+                talentRequest.setTalentWishlist(wishlist);
+                log.info("Saving talent request: {}", talentRequest);
                 talentRequestRepository.save(talentRequest);
+                log.info("Talent request saved with ID: {}", talentRequest.getTalentRequestId());
             } else {
                 failedRequests.add(item.getWishlistId());
             }

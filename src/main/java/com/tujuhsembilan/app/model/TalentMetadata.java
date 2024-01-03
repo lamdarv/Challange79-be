@@ -1,10 +1,7 @@
 package com.tujuhsembilan.app.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -21,6 +18,7 @@ public class TalentMetadata {
     @Id
     private UUID id;
 
+    @ToString.Exclude
     @MapsId // This annotation tells JPA to use the id field of Talent as the id of TalentMetadata
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "talent_id")
