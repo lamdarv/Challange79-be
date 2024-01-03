@@ -26,10 +26,13 @@ public class TalentWishlist {
     @Column(name = "talent_wishlist_id", updatable = false, nullable = false)
     private UUID talentWishlistId;
 
-    @ManyToOne
-    @JoinColumn(name = "talent_id")
-    private Talent talent;
+//    @ManyToOne
+//    @JoinColumn(name = "talent_id")
+//    private Talent talent;
 
+    @ManyToOne
+    @JoinColumn(name = "talent_id", referencedColumnName = "talent_id")
+    private Talent talent;
 
     @Column(name = "client_id")
     private UUID clientId;

@@ -15,4 +15,6 @@ public interface SkillsetRepository extends JpaRepository<Skillset, String> {
     List<Skillset> findByNameContainsIgnoreCase(@Param("name") String name);
 
     Optional<Skillset> findBySkillsetName(String name);
+
+
 }

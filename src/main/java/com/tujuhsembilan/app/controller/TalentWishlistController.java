@@ -4,6 +4,7 @@ import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.DisplayWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.RemoveWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.TalentWishlistDTO;
+import com.tujuhsembilan.app.dto.talentRequest.DisplayRequestTalentDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistRequestDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistResponseDTO;
 import com.tujuhsembilan.app.model.Client;
@@ -13,6 +14,7 @@ import com.tujuhsembilan.app.model.User;
 import com.tujuhsembilan.app.repository.TalentRepository;
 import com.tujuhsembilan.app.repository.TalentWishlistRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
+import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import com.tujuhsembilan.app.service.DisplayWishlistTalentService;
 import com.tujuhsembilan.app.service.TalentWishlistService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +48,9 @@ public class TalentWishlistController {
 
     @Autowired
     private DisplayWishlistTalentService displayWishlistTalentService;
+
+    @Autowired
+    private DisplayRequestTalentService displayRequestTalentService;
 
     private static final Logger log = LoggerFactory.getLogger(TalentWishlistController.class);
 
@@ -183,6 +188,40 @@ public class TalentWishlistController {
             // Log the exception for debugging and return a generic error response
             // You should log the actual exception message and stack trace here
             return ResponseEntity.internalServerError().body(new WishlistResponseDTO(null, "An error occurred while processing the request."));
+        }
+    }
+
+    @GetMapping("/requests")
+    @Transactional
+    public ResponseEntity<Page<DisplayRequestTalentDTO>> getAllTalentRequests(
+            @RequestParam UUID user_id,
+            @RequestParam(required = false) String status,
+            Pageable pageable) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(user_id);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                UUID clientId = user.getClient().getClientId();
+
+                // Adjust log message to account for optional status
+                if (status != null) {
+                    log.info("Fetching talent requests for clientId: {} and status: {}", clientId, status);
+                } else {
+                    log.info("Fetching all talent requests for clientId: {}", clientId);
+                }
+
+                // Service method must handle the case when status is null
+                Page<DisplayRequestTalentDTO> response = displayRequestTalentService.getDisplayRequestTalentsWithDetails(clientId, status, pageable);
+
+                log.info("Found {} talent requests", response.getNumberOfElements());
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("User not found for id: {}", user_id);
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            log.error("An error occurred while processing the request", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
         }
     }
 }

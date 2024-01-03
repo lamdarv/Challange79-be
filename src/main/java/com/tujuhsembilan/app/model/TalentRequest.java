@@ -36,8 +36,12 @@ public class TalentRequest {
         this.talentRequestStatus = talentRequestStatus;
     }
 
-    @Column(name = "talent_wishlist_id")
-    private UUID talentWishlistId;
+//    @Column(name = "talent_wishlist_id")
+//    private UUID talentWishlistId;
+
+    @ManyToOne
+    @JoinColumn(name = "talent_wishlist_id", referencedColumnName = "talent_wishlist_id")
+    private TalentWishlist talentWishlist;
 
     @Column(name = "request_date")
     private LocalDateTime requestDate;
