@@ -59,7 +59,7 @@ public class DisplayWishlistTalentService {
             dto.setTalentName(talent.getTalentName());
             dto.setTalentAvailability(talent.getTalentAvailability());
             dto.setTalentExperience(talent.getTalentExperience());
-            dto.setTalentLevel(talent.getTalentLevelId().getTalentLevelName());
+            dto.setTalentLevel(talent.getTalentLevel().getTalentLevelName());
 
             List<PositionDTO> positionDTOs = mapPositions(talent.getTalentPositions());
             dto.setPositions(positionDTOs);

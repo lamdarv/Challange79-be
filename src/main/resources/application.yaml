@@ -34,6 +34,11 @@ jwt:
   secret: wZ6kT3LdV8xpNsZhPQQHv9rNB2fgFwFxZBtH5qKXB5J3Gk6mLeSSRtHKs1kSzX+LflGTjtG1qJSG6YVPehqZnNxSRHfSwLfHuYd/L2RKmXQPT9KAX9Rg+5LTp9jgJmVpcx06GhFIrbHXnRfM2B3yHvyPmTX9nmF7lTGjvbrX8edQgdF+Q3zvrfG2fMNBRPJMbzsP9qqLBOZ+XKkVbjpR/jGJn/RO+Kba3s8BwTlCIvVkI8pBx7Sz2LLyBYVnZQQVZGqnuoRDsJNEwHT6V5/InJu4O7XyLaJ+Xn5RjR6nplufT8ndJ/IbmS+UsSzNvQkLt6m7bVwML5FpDpzi2e8lq9J+Spb3Lc3FaXmP2RwZUhdLhej7TyRemZK1yTn6wNq2wqS8DG+2uW/dToaXKbKn5zP3sTeN2tLuZKQKLk4VN87Vb3jigrKcbTnq+cYzZjG1H7K8tfZ1DcR9g2dXUD/51ZTJC1f4i1pXC/dfNW7dtfZyGrutjMwHhAxllVkI1xRbGpq6DqKv4a8Fn7Q4lY0fx3FDSc7FT+MhtC7MLQ/D7Hw4vkjqC3KNEv5R2B32Yq+bJukdjw2XTRxeYFvqGWGKZXr4Bq9QVyrxBuVFtVWdNBqZRTU4WJslUeFvmhxRDdqwv5PQH20gUq0zpDW2blfZfdkRNEHZHKmtQ+2cxBWjus2GwF=
   expiration-in-ms: 3600000
 
+minio:
+  endpoint: https://minio.cloudias79.com
+  accessKey: devtalentcenter
+  secretKey: as4Dx6L4Uf1zFkyy
+
 # Production profile configuration
 --- ## Production
 

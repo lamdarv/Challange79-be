@@ -72,7 +72,7 @@ public class DisplayRequestTalentService {
             dto.setTalentName(talent.getTalentName());
             dto.setTalentExperience(talent.getTalentExperience());
             dto.setTalentAvailability(talent.getTalentAvailability());
-            dto.setTalentLevel(talent.getTalentLevelId().getTalentLevelName());
+            dto.setTalentLevel(talent.getTalentLevel().getTalentLevelName());
 
             List<PositionDTO> positionDTOs = mapPositions(talent.getTalentPositions());
             dto.setPositions(positionDTOs);

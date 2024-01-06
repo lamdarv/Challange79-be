@@ -12,5 +12,4 @@ public class SkillsetDTO {
         this.tagsId = tagsId;
         this.tagsName = tagsName;
     }
-
 }

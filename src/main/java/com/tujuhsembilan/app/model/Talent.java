@@ -25,7 +25,7 @@ import jakarta.validation.constraints.Size;
 public class Talent {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "talent_id")
     private UUID talentId;
 
@@ -41,18 +41,19 @@ public class Talent {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "talent_level_id")
-    private TalentLevel talentLevelId;
+    private TalentLevel talentLevel;
 
     @OneToOne
     @JoinColumn(name = "talent_status_id")
-    private TalentStatus talentStatusId;
+    private TalentStatus talentStatus;
 
     @ToString.Exclude
     @OneToOne(mappedBy = "talent", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     private TalentMetadata talentMetadata;
 
-    @Column(name = "employee_status_id")
-    private UUID employeeStatusId;
+    @ManyToOne
+    @JoinColumn(name = "employee_status_id", referencedColumnName = "employee_status_id")
+    private EmployeeStatus employeeStatus;
 
     @Size(max = 255)
     @Column(name = "talent_name")
@@ -141,6 +142,4 @@ public class Talent {
     public void setAvailability(boolean availability) {
         this.talentAvailability = availability;
     }
-
-
 }

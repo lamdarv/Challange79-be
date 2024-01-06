@@ -23,7 +23,7 @@ public class TalentStatus {
 
     @Size(max = 50)
     @Column(name = "talent_status_name")
-    private String talentStatus;
+    private String talentStatusName;
 
     @Column(name = "is_active")
     private Boolean isActive;

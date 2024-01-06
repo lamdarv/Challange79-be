@@ -6,6 +6,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,6 +79,12 @@ public class ApplicationConfig {
   @Bean
   public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
     return builder -> {
+      // Install the JavaTimeModule to handle Java 8 date-time types
+      builder.modulesToInstall(new JavaTimeModule());
+
+      // Disable the feature that writes dates as timestamps
+      builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
       builder.deserializers(new LocalDateDeserializer(DateTimeFormatter.ISO_LOCAL_DATE));
       builder.serializers(new LocalDateSerializer(DateTimeFormatter.ISO_DATE));
 

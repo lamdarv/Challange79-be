@@ -1,31 +1,40 @@
 package com.tujuhsembilan.app.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tujuhsembilan.app.configuration.JwtUtils;
-import com.tujuhsembilan.app.dto.PositionDTO;
-import com.tujuhsembilan.app.dto.ProfileCounterDTO;
-import com.tujuhsembilan.app.dto.SkillsetDTO;
-import com.tujuhsembilan.app.dto.TalentDTO;
+import com.tujuhsembilan.app.dto.*;
 import com.tujuhsembilan.app.model.*;
 import com.tujuhsembilan.app.repository.*;
+import com.tujuhsembilan.app.service.DisplayRequestTalentService;
+import com.tujuhsembilan.app.service.SaveDataTalentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/talent-management")
@@ -36,6 +45,14 @@ public class TalentController {
     private final JwtUtils jwtUtils;
     private final TalentMetadataRepository talentMetadataRepository;
     private final DisplayWishlistTalentRepository displayWishlistTalentRepository;
+    private final TalentLevelRepository talentLevelRepository;
+    private final TalentStatusRepository talentStatusRepository;
+    private final EmployeeStatusRepository employeeStatusRepository;
+
+    @Autowired
+    private SaveDataTalentService saveDataTalentService;
+
+    private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     @Autowired
     public TalentController(TalentRepository talentRepository,
@@ -43,15 +60,21 @@ public class TalentController {
                             UserRepository userRepository,
                             JwtUtils jwtUtils,
                             TalentMetadataRepository talentMetadataRepository,
-                            DisplayWishlistTalentRepository displayWishlistTalentRepository) {
+                            DisplayWishlistTalentRepository displayWishlistTalentRepository,
+                            SaveDataTalentService saveDataTalentService,
+                            TalentLevelRepository talentLevelRepository,
+                            TalentStatusRepository talentStatusRepository,
+                            EmployeeStatusRepository employeeStatusRepository) {
         this.talentRepository = talentRepository;
         this.talentWishlistRepository = talentWishlistRepository;
         this.jwtUtils = jwtUtils;
         this.talentMetadataRepository = talentMetadataRepository;
         this.displayWishlistTalentRepository = displayWishlistTalentRepository;
+        this.saveDataTalentService = saveDataTalentService;
+        this.talentLevelRepository = talentLevelRepository;
+        this.talentStatusRepository = talentStatusRepository;
+        this.employeeStatusRepository = employeeStatusRepository;
     }
-
-
 
     //DisplayTalents
     @GetMapping("/talents")
@@ -61,6 +84,7 @@ public class TalentController {
             @RequestParam(value = "talentLevelName", required = false) String talentLevelName,
             @RequestParam(value = "talentExperience", defaultValue = "talentExperience,desc") String talentExperience,
             @RequestParam(value = "talentStatus", required = false) String talentStatus,
+            @RequestParam(value = "employeeStatus", required = false) String employeeStatus,
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(value = "talentName", required = false) String talentName,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -74,7 +98,7 @@ public class TalentController {
                 predicates.add(cb.like(cb.lower(root.get("talentName")), "%" + search.toLowerCase() + "%"));
             }
             if (talentLevelName != null && !talentLevelName.trim().isEmpty()) {
-                predicates.add(cb.equal(root.get("talentLevelId").get("talentLevelName"), talentLevelName));
+                predicates.add(cb.equal(root.get("talentLevel").get("talentLevelName"), talentLevelName));
             }
             if (talentStatus != null && !talentStatus.trim().isEmpty()) {
                 Join<Talent, TalentStatus> talentStatusJoin = root.join("talentStatusId");
@@ -96,7 +120,7 @@ public class TalentController {
             if (talentExperienceParams.length > 1) {
                 talentExperienceSort = "asc".equalsIgnoreCase(talentExperienceParams[1]) ? talentExperienceSort.ascending() : talentExperienceSort.descending();
             }
-            finalSort = talentExperienceSort.and(Sort.by("talentLevelId.talentLevelName").descending());
+            finalSort = talentExperienceSort.and(Sort.by("talentLevel.talentLevelName").descending());
         }
         if (talentName != null && !talentName.isEmpty()) {
             String[] talentNameParams = talentName.split(",");
@@ -124,15 +148,19 @@ public class TalentController {
         dto.setTalentPhotoUrl(talent.getTalentPhotoUrl());
         dto.setTalentName(talent.getTalentName());
 
-        if (talent.getTalentStatusId() != null) {
-            dto.setTalentStatus(talent.getTalentStatusId().getTalentStatus());
+        if (talent.getTalentStatus() != null) {
+            dto.setTalentStatus(talent.getTalentStatus().getTalentStatusName());
+        }
+
+        if (talent.getEmployeeStatus() != null){
+            dto.setEmployeeStatus(talent.getEmployeeStatus().getEmployeeStatusName());
         }
 
         dto.setTalentAvailability(talent.getTalentAvailability());
         dto.setTalentExperience(talent.getTalentExperience());
 
-        if (talent.getTalentLevelId() != null) {
-            dto.setTalentLevelName(talent.getTalentLevelId().getTalentLevelName());
+        if (talent.getTalentLevel() != null) {
+            dto.setTalentLevelName(talent.getTalentLevel().getTalentLevelName());
         }
 
         if (talent.getTalentPositions() != null) {
@@ -173,6 +201,61 @@ public class TalentController {
         return dto;
     }
 
+    //Save Data Talent
+    @PostMapping("/talents")
+    public ResponseEntity<String> createTalent(
+            @RequestParam("talentPhoto") MultipartFile talentPhoto,
+            @RequestParam("talentCV") MultipartFile talentCV,
+            @RequestParam("talentName") String talentName,
+            @RequestParam("talentStatusId") UUID talentStatusId,
+            @RequestParam("nip") String nip,
+            @RequestParam("sex") String sex,
+            @RequestParam("dob") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dob,
+            @RequestParam("talentDescription") String talentDescription,
+            @RequestParam("talentExperience") Integer talentExperience,
+            @RequestParam("talentLevelId") UUID talentLevelId,
+            @RequestParam("projectCompleted") Integer projectCompleted,
+            @RequestParam("email") String email,
+            @RequestParam("cellphone") String cellphone,
+            @RequestParam("employeeStatusId") UUID employeeStatusId,
+            @RequestParam("videoUrl") String videoURL,
+            @RequestParam(required = false) List<UUID> positionIds,
+            @RequestParam(required = false) List<UUID> skillsetIds) {
+
+        log.info("Received request to create talent");
+
+        // Create DTO from request parameters
+        SaveDataTalentDTO saveDataTalentDTO = new SaveDataTalentDTO();
+        saveDataTalentDTO.setTalentName(talentName);
+        saveDataTalentDTO.setTalentStatusId(talentStatusId);
+        saveDataTalentDTO.setNip(nip);
+        saveDataTalentDTO.setSex(sex);
+        saveDataTalentDTO.setDob(dob);
+        saveDataTalentDTO.setTalentDescription(talentDescription);
+        saveDataTalentDTO.setTalentExperience(talentExperience);
+        saveDataTalentDTO.setTalentLevelId(talentLevelId);
+        saveDataTalentDTO.setProjectCompleted(projectCompleted);
+        saveDataTalentDTO.setEmail(email);
+        saveDataTalentDTO.setCellphone(cellphone);
+        saveDataTalentDTO.setEmployeeStatusId(employeeStatusId);
+        saveDataTalentDTO.setVideoUrl(videoURL);
+
+        log.info("DTO created: {}", saveDataTalentDTO);
+
+        try {
+            log.info("Received dob: {}", dob);
+
+            saveDataTalentService.createTalent(talentPhoto, talentCV, saveDataTalentDTO, positionIds, skillsetIds);
+
+            log.info("Talent creation service called successfully");
+            return ResponseEntity.status(HttpStatus.CREATED).body("Talent successfully created.");
+        } catch (Exception e) {
+            log.error("Error creating talent", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating talent.");
+        }
+    }
+
+
     //API PUT Count Profile
     @PutMapping("/talents/profile-count")
     @Transactional
@@ -192,8 +275,4 @@ public class TalentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating profile counter: " + e.getMessage());
         }
     }
-
-
-
-
 }

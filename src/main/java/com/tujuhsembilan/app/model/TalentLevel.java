@@ -18,7 +18,7 @@ public class TalentLevel {
 
     @Id
     @GeneratedValue
-    @Column(name = "talent_level_id")
+    @Column(name = "talent_level_id", columnDefinition = "uuid")
     private UUID talentLevelId;
 
     @Size(max = 50)

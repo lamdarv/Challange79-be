@@ -17,7 +17,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "talent_position")
-@IdClass(TalentPosition.class)
+@IdClass(TalentPosition.TalentPositionId.class)
 public class TalentPosition {
     @Id
     @ToString.Exclude
