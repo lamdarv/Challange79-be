@@ -59,17 +59,18 @@ public class SaveDataTalentService {
 
     public void createTalent(MultipartFile talentPhoto, MultipartFile talentCV, SaveDataTalentDTO saveDataTalentDTO, List<UUID> positionIds, List<UUID> skillsetIds){
         validateFileExtensions(talentPhoto, talentCV);
+        String talentLevelName = getTalentLevelNameById(saveDataTalentDTO.getTalentLevelId());
 
         String talentPhotoFileName = constructFileName(
                 saveDataTalentDTO.getTalentName(),
                 saveDataTalentDTO.getTalentExperience(),
-                saveDataTalentDTO.getTalentLevelId().toString(),
+                talentLevelName,
                 talentPhoto.getOriginalFilename()
         );
         String talentCVFileName = constructFileName(
                 saveDataTalentDTO.getTalentName(),
                 saveDataTalentDTO.getTalentExperience(),
-                saveDataTalentDTO.getTalentLevelId().toString(),
+                talentLevelName,
                 talentCV.getOriginalFilename());
 
         // Use MinioSrvc to upload the photo and CV to MinIO
@@ -98,6 +99,12 @@ public class SaveDataTalentService {
         talentRepository.save(talent);
 
         savePositionAndSkillset(talent, positionIds, skillsetIds);
+    }
+
+    public String getTalentLevelNameById(UUID talentLevelId) {
+        // Retrieve talent level name from the repository based on talent level ID
+        return talentLevelRepository.findTalentLevelNameByTalentLevelId(talentLevelId)
+                .orElse(null);
     }
 
     private void validateFileExtensions(MultipartFile talentPhoto, MultipartFile talentCV) {
@@ -174,6 +181,8 @@ public class SaveDataTalentService {
         talent.setCellphone(saveDataTalentDTO.getCellphone());
         talent.setEmployeeStatus(employeeStatus);
         talent.setBiographyVideoUrl(saveDataTalentDTO.getVideoUrl());
+        talent.setAvailability(true);
+        talent.setIsActive(true);
 
         return talent;
     }
