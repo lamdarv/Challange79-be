@@ -39,7 +39,7 @@ public class DisplayWishlistTalentService {
 
 
     public Page<DisplayWishlistTalentDTO> getAllWishlistTalentsByClientId(UUID clientId, boolean isActive, Pageable pageable) {
-        Page<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findByClientIdAndIsActive(clientId,true ,pageable); // Metode baru
+        Page<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findByClient_ClientIdAndIsActive(clientId,true ,pageable); // Metode baru
         List<DisplayWishlistTalentDTO> sortedList = talentWishlists.getContent()
                 .stream()
                 .map(this::mapToDTO)

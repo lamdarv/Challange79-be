@@ -11,6 +11,7 @@ import com.tujuhsembilan.app.model.Client;
 import com.tujuhsembilan.app.model.Talent;
 import com.tujuhsembilan.app.model.TalentWishlist;
 import com.tujuhsembilan.app.model.User;
+import com.tujuhsembilan.app.repository.ClientRepository;
 import com.tujuhsembilan.app.repository.TalentRepository;
 import com.tujuhsembilan.app.repository.TalentWishlistRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
@@ -42,6 +43,7 @@ public class TalentWishlistController {
     private final UserRepository userRepository;
     private final TalentRepository talentRepository;
     private final TalentWishlistRepository talentWishlistRepository;
+    private final ClientRepository clientRepository;
     private final JwtUtils jwtUtils;
     @Autowired
     private TalentWishlistService talentWishlistService;
@@ -58,10 +60,12 @@ public class TalentWishlistController {
     public TalentWishlistController(UserRepository userRepository,
                                     TalentRepository talentRepository,
                                     TalentWishlistRepository talentWishlistRepository,
+                                    ClientRepository clientRepository,
                                     JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.talentRepository = talentRepository;
         this.talentWishlistRepository = talentWishlistRepository;
+        this.clientRepository = clientRepository;
         this.jwtUtils = jwtUtils;
     }
 
@@ -73,13 +77,20 @@ public class TalentWishlistController {
         try {
             UUID userId = getUserIdFromToken(request);
             if (userId == null) {
-                return new ResponseEntity<>("Invalid token.", HttpStatus.UNAUTHORIZED);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
             }
 
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+            // Ensure that User has an associated Client
+            if (user.getClient() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User does not have an associated client.");
+            }
+
             UUID clientId = user.getClient().getClientId();
+            Client client = clientRepository.findById(clientId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
 
             // Find the Talent entity
             Talent talent = talentRepository.findById(talentWishlistDTO.getTalentId())
@@ -87,14 +98,14 @@ public class TalentWishlistController {
 
             TalentWishlist talentWishlist = TalentWishlist.builder()
                     .talent(talent)
-                    .clientId(clientId)
+                    .client(client)
                     .wishlistDate(LocalDateTime.now())
                     .isActive(true)
                     .build();
 
             talentWishlistRepository.save(talentWishlist);
 
-            return ResponseEntity.ok(talent.getTalentName() + " with id " + talent.getTalentId() + " successfully added to wishlist!");
+            return ResponseEntity.ok(talent.getTalentName() + " with talentId " + talent.getTalentId() + " successfully added to wishlist! The wishlistId is: " + talentWishlist.getTalentWishlistId());
 
         } catch (Exception e) {
             return new ResponseEntity<>("Error adding talent to wishlist! " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -143,8 +154,10 @@ public class TalentWishlistController {
     @Transactional
     public ResponseEntity<String> removeWishlist(@RequestBody RemoveWishlistTalentDTO request) {
         try {
-            talentWishlistService.removeWishlist(request.getTalentWishlistId());
-            return ResponseEntity.ok("Wishlist item successfully deactivated");
+            UUID talentWishlistId = request.getTalentWishlistId();
+            talentWishlistService.removeWishlist(talentWishlistId);
+            return ResponseEntity.ok("Wishlist with id " + talentWishlistId + " successfully removed!");
+
         } catch (ResponseStatusException e) {
             return ResponseEntity
                     .status(e.getStatusCode())

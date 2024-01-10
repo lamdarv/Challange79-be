@@ -12,8 +12,9 @@ import java.util.UUID;
 @Repository
 public interface DisplayRequestTalentRepository extends JpaRepository<TalentRequest, UUID> {
 //    List<TalentRequest> findByClientId(UUID clientId);
-    Page<TalentRequest> findByTalentWishlist_ClientId(UUID clientId, Pageable pageable);
-    Page<TalentRequest> findByTalentWishlist_ClientIdAndTalentRequestStatus_TalentRequestStatusName(UUID clientId, String status, Pageable pageable);
+    Page<TalentRequest> findByTalentWishlist_Client_ClientId(UUID clientId, Pageable pageable);
+    Page<TalentRequest> findByTalentWishlist_Client_ClientIdAndTalentRequestStatus_TalentRequestStatusName(
+            UUID clientId, String statusName, Pageable pageable);
 
 }
 

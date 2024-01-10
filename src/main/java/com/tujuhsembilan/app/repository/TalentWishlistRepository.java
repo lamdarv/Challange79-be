@@ -19,8 +19,9 @@ public interface TalentWishlistRepository extends JpaRepository<TalentWishlist, 
     @Query("SELECT t FROM TalentWishlist w JOIN w.talent t WHERE t.talentId = :talentId")
     Optional<Talent> findTalentByTalentId(@Param("talentId") UUID talentId);
 
-    @Query("SELECT w FROM TalentWishlist w WHERE w.clientId = :clientId")
-    List<TalentWishlist> findAllByClientId(@Param("clientId") UUID clientId);
+//    @Query("SELECT w FROM TalentWishlist w WHERE w.clientId = :clientId")
+//    List<TalentWishlist> findAllByClientId(@Param("clientId") UUID clientId);
+    List<TalentWishlist> findAllByClient_ClientId(UUID clientId);
 
     @Modifying
     @Query("UPDATE TalentWishlist w SET w.isActive = false WHERE w.talentWishlistId = :talentWishlistId")

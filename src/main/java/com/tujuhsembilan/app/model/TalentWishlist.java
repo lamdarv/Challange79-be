@@ -32,8 +32,9 @@ public class TalentWishlist {
     @JoinColumn(name = "talent_id", referencedColumnName = "talent_id")
     private Talent talent;
 
-    @Column(name = "client_id")
-    private UUID clientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     @Column(name = "wishlist_date")
     private LocalDateTime wishlistDate;

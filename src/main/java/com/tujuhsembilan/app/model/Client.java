@@ -74,6 +74,9 @@ public class Client {
 
     public enum Gender {
         Male,
-        Female
+        Female,
+        L,
+        P,
     }
+
 }

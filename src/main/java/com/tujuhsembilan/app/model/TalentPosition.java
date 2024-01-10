@@ -2,9 +2,7 @@ package com.tujuhsembilan.app.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -17,7 +15,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "talent_position")
-@IdClass(TalentPosition.TalentPositionId.class)
+@IdClass(TalentPosition.class)
 public class TalentPosition {
     @Id
     @ToString.Exclude
@@ -30,12 +28,6 @@ public class TalentPosition {
     @ManyToOne
     @JoinColumn(name = "position_id")
     private Position position;
-
-    @Data
-    public class TalentPositionId implements Serializable {
-        private UUID talent;
-        private UUID position;
-    }
 
     @CreatedBy
     @Column(name = "created_by")

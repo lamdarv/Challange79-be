@@ -55,7 +55,7 @@ public class TalentWishlistService {
 
     @Transactional
     public void removeAllWishlist(UUID clientId){
-        List<TalentWishlist> wishlists = talentWishlistRepository.findAllByClientId(clientId);
+        List<TalentWishlist> wishlists = talentWishlistRepository.findAllByClient_ClientId(clientId);
 
         for (TalentWishlist wishlist : wishlists) {
             if(wishlist.getIsActive()){

@@ -42,9 +42,9 @@ public class DisplayRequestTalentService {
         Page<TalentRequest> talentRequests;
 
         if (status != null && !status.isEmpty()) {
-            talentRequests = displayRequestTalentRepository.findByTalentWishlist_ClientIdAndTalentRequestStatus_TalentRequestStatusName(clientId, status, pageable);
+            talentRequests = displayRequestTalentRepository.findByTalentWishlist_Client_ClientIdAndTalentRequestStatus_TalentRequestStatusName(clientId, status, pageable);
         } else {
-            talentRequests = displayRequestTalentRepository.findByTalentWishlist_ClientId(clientId, pageable);
+            talentRequests = displayRequestTalentRepository.findByTalentWishlist_Client_ClientId(clientId, pageable);
         }
 
         log.info("Fetched {} talent requests for client with ID: {}", talentRequests.getNumberOfElements(), clientId);
