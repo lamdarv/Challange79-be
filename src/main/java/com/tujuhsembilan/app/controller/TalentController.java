@@ -1,7 +1,5 @@
 package com.tujuhsembilan.app.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.*;
 import com.tujuhsembilan.app.model.*;
@@ -25,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -87,8 +86,11 @@ public class TalentController {
             @RequestParam(value = "employeeStatus", required = false) String employeeStatus,
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(value = "talentName", required = false) String talentName,
+            @RequestParam(value = "tagsName", required = false) String tagsName,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        log.info("Received tagsName: {}", tagsName);
 
         // Create a Specification based on search criteria
         Specification<Talent> spec = (root, query, cb) -> {
@@ -105,6 +107,12 @@ public class TalentController {
                 String formattedTalentStatus = talentStatus.trim().replaceAll("\\s+", " ");
                 predicates.add(cb.equal(cb.lower(talentStatusJoin.get("talentStatus")), formattedTalentStatus.toLowerCase()));
             }
+            if (tagsName != null && !tagsName.trim().isEmpty()) {
+                Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets");
+                Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset");
+                predicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tagsName.toLowerCase()));
+            }
+
             if (isActive != null) {
                 predicates.add(cb.equal(root.get("isActive"), isActive));
             }
