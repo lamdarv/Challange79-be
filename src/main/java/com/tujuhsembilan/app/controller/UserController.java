@@ -12,6 +12,7 @@ import com.tujuhsembilan.app.repository.ClientPositionRepository;
 import com.tujuhsembilan.app.repository.ClientRepository;
 import com.tujuhsembilan.app.repository.RoleRepository;
 import com.tujuhsembilan.app.repository.UserRepository;
+import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,11 +22,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 @RequestMapping("/user-management/users")
 public class UserController {
@@ -35,6 +37,8 @@ public class UserController {
     private final ClientPositionRepository clientPositionRepository;
     private final JwtUtils jwtUtils;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     @Autowired
     public UserController(
@@ -54,28 +58,38 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody @Valid UserRegistrationDTO request) {
+        log.info("Received request register for : " + request.getEmail());
         try {
             // Check for email duplication
             if (userRepository.existsByEmail(request.getEmail())) {
                 return ResponseEntity.badRequest().body("Email already exists");
+            } else {
+                log.info("Email memang belum pernah didaftarkan");
             }
 
             // Find the role with name "Client"
-            Role defaultRole = roleRepository.findByRoleName("Client");
+            Role defaultRole = roleRepository.findFirstByRoleName("Client");
 
             if (defaultRole == null) {
                 return ResponseEntity.badRequest().body("Error: Role 'Client' not found");
+            } else {
+                log.info("Role 'Client' ditemukan");
             }
 
             // Find ClientPosition by name
             String clientPositionName = request.getClientPositionName();
+            log.debug("Attempting to find ClientPosition by name: {}", clientPositionName);
             Optional<ClientPosition> optionalClientPosition = clientPositionRepository.findByClientPositionName(clientPositionName);
 
             if (optionalClientPosition.isEmpty()) {
+                log.warn("Client Position not found for name: {}", clientPositionName);
                 return ResponseEntity.badRequest().body("Client Position not found");
+            } else {
+                log.info("ClientPosition found: {}", clientPositionName);
             }
 
             // Create a new User
+//            log.debug("Creating new user with email: {}", request.getEmail());
             User newUser = User.builder()
                     .firstName(request.getFirstName())
                     .lastName(request.getLastName())
@@ -86,12 +100,15 @@ public class UserController {
                     .build();
 
             // Save the User to the database
+            log.debug("Saving new user to database with email: {}", request.getEmail());
             User savedUser = userRepository.save(newUser);
+            log.info("New user saved with ID: {}", savedUser.getUserId());
 
             // Get ClientPosition ID
             ClientPosition clientPosition = optionalClientPosition.get();
 
             // Create a new Client
+            log.debug("Creating new client for user ID: {}", savedUser.getUserId());
             Client newClient = Client.builder()
                     .clientName(request.getFirstName() + " " + request.getLastName())
                     .email(request.getEmail())
@@ -112,6 +129,7 @@ public class UserController {
             return ResponseEntity.badRequest().body("Error: User registration failed. Please check your input.");
         } catch (Exception e) {
             // Catch any other unexpected exceptions
+            log.error("Unexpected error during user registration", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error registering user");
         }
     }
@@ -120,6 +138,8 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> signIn(@RequestBody Map<String, String> credentials) {
         String email = credentials.get("email");
         String password = credentials.get("password");
+
+        log.info("Received login request with email: {}", email);
 
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
@@ -159,4 +179,5 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
+
 }
