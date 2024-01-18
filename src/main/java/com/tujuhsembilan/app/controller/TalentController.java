@@ -9,6 +9,7 @@ import com.tujuhsembilan.app.service.SaveDataTalentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+
+import lib.minio.MinioSrvc;
 
 
 import java.time.LocalDateTime;
@@ -50,6 +53,9 @@ public class TalentController {
 
     @Autowired
     private SaveDataTalentService saveDataTalentService;
+
+    @Autowired
+    private MinioSrvc minioSrvc;
 
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
@@ -281,6 +287,43 @@ public class TalentController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating profile counter: " + e.getMessage());
+        }
+    }
+
+    //API POST Download CV
+    @PostMapping("/talents/download-cv")
+    @Transactional
+    public ResponseEntity<?> downloadCV(@RequestBody DownloadCVRequestDTO request, HttpServletResponse response) {
+        try {
+            Talent talent = talentRepository.findById(request.getTalentId())
+                    .orElseThrow(() -> new RuntimeException("Talent not found"));
+
+            String talentCVFilename = talent.getTalentCVFilename();
+            if (talentCVFilename == null || talentCVFilename.isEmpty()){
+                throw new RuntimeException("CV not available for this talent");
+            }
+
+            String bucketName = "talent-center-app";
+            minioSrvc.view(response, bucketName, talentCVFilename);
+            return ResponseEntity.ok("CV successfully downloaded");
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/talents/download-cv-count")
+    @Transactional
+    public ResponseEntity<?> incrementCVDownloadCount(@RequestBody DownloadCVCountRequestDTO request) {
+        try {
+            TalentMetadata talentMetadata = talentMetadataRepository.findById(request.getTalentId())
+                    .orElseThrow(() -> new RuntimeException("Talent Metadata not found!"));
+
+            talentMetadata.setCvCounter(talentMetadata.getCvCounter() + 1);
+            talentMetadataRepository.save(talentMetadata);
+            return ResponseEntity.ok("CV Download Count " + talentMetadata.getCvCounter());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
