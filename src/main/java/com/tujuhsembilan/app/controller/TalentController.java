@@ -7,7 +7,9 @@ import com.tujuhsembilan.app.repository.*;
 import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import com.tujuhsembilan.app.service.SaveDataTalentService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -92,7 +94,7 @@ public class TalentController {
             @RequestParam(value = "employeeStatus", required = false) String employeeStatus,
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(value = "talentName", required = false) String talentName,
-            @RequestParam(value = "tagsName", required = false) String tagsName,
+            @RequestParam(value = "tagsName", required = false) List<String> tagsName,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
 
@@ -113,10 +115,16 @@ public class TalentController {
                 String formattedTalentStatus = talentStatus.trim().replaceAll("\\s+", " ");
                 predicates.add(cb.equal(cb.lower(talentStatusJoin.get("talentStatus")), formattedTalentStatus.toLowerCase()));
             }
-            if (tagsName != null && !tagsName.trim().isEmpty()) {
-                Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets");
-                Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset");
-                predicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tagsName.toLowerCase()));
+            if (tagsName != null && !tagsName.isEmpty()) {
+                Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets", JoinType.INNER);
+                Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset", JoinType.INNER);
+
+                List<Predicate> tagPredicates = new ArrayList<>();
+                for (String tag : tagsName) {
+                    tagPredicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tag.toLowerCase()));
+                }
+
+                predicates.add(cb.or(tagPredicates.toArray(new Predicate[0])));
             }
 
             if (isActive != null) {

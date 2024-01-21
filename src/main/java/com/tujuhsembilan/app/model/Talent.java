@@ -36,7 +36,7 @@ public class Talent {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "talent")
+    @OneToMany(mappedBy = "talent", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<TalentSkillset> talentSkillsets;
 
     @ManyToOne(fetch = FetchType.EAGER)

@@ -16,7 +16,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "talent_skillset")
-@IdClass(TalentSkillset.class)
+@IdClass(TalentSkillsetId.class)
 public class TalentSkillset {
     @Id
     @ToString.Exclude
@@ -29,12 +29,6 @@ public class TalentSkillset {
     @ManyToOne
     @JoinColumn(name = "skillset_id")
     private Skillset skillset;
-
-    @Data
-    public class TalentSkillsetId implements Serializable {
-        private UUID talent;
-        private UUID skillset;
-    }
 
     @CreatedBy
     @Column(name = "created_by")
