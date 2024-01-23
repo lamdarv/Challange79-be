@@ -6,10 +6,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface SkillsetTypeRepository extends JpaRepository<SkillsetType, UUID> {
     List<SkillsetType> findAllBySkillsetTypeId(UUID skillsetTypeId);
     List<SkillsetType> findAllBySkillsetTypeName(String skillsetTypeName);
+
+    // New
+    Optional<SkillsetType> findById(UUID id);
+    SkillsetType findBySkillsetTypeName(String name);
 }

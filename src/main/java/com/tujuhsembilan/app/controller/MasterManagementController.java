@@ -3,20 +3,14 @@ package com.tujuhsembilan.app.controller;
 import com.tujuhsembilan.app.dto.*;
 import com.tujuhsembilan.app.model.Skillset;
 import com.tujuhsembilan.app.model.SkillsetType;
-import com.tujuhsembilan.app.repository.PositionRepository;
-import com.tujuhsembilan.app.repository.SkillsetTypeRepository;
-import com.tujuhsembilan.app.repository.TalentLevelRepository;
-import com.tujuhsembilan.app.repository.TalentRepository;
+import com.tujuhsembilan.app.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,12 +23,20 @@ public class MasterManagementController {
 
     private final SkillsetTypeRepository skillsetTypeRepository;
 
+    private final SkillsetRepository skillsetRepository;
+
     @Autowired
-    public MasterManagementController(PositionRepository positionRepository, TalentRepository talentRepository, TalentLevelRepository talentLevelRepository, SkillsetTypeRepository skillsetTypeRepository){
+    public MasterManagementController(
+            PositionRepository positionRepository,
+            TalentRepository talentRepository,
+            TalentLevelRepository talentLevelRepository,
+            SkillsetTypeRepository skillsetTypeRepository,
+            SkillsetRepository skillsetRepository){
         this.positionRepository = positionRepository;
         this.talentRepository = talentRepository;
         this.talentLevelRepository = talentLevelRepository;
         this.skillsetTypeRepository = skillsetTypeRepository;
+        this.skillsetRepository = skillsetRepository;
     }
 
     //MasterPosition
@@ -62,38 +64,69 @@ public class MasterManagementController {
                 .collect(Collectors.toList());
     }
 
-    private List<SkillsetType> getSkillsetType(String type) {
-        List<SkillsetType> skillsetTypeList;
-        switch (type.toUpperCase()) {
-            case "1":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Framework");
-                break;
-            case "2":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Programming Language");
-                break;
-            case "3":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Development Tools");
-                break;
-            case "4":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("UI/UX");
-                break;
-            case "5":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Dev-Ops");
-                break;
-            case "6":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Documentation");
-                break;
-            case "7":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Hardware Skills");
-                break;
-            case "8":
-                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Tech Support");
-                break;
-            default:
-                skillsetTypeList = skillsetTypeRepository.findAll();
-                break;
+//    private List<SkillsetType> getSkillsetType(String type) {
+//        List<SkillsetType> skillsetTypeList;
+//        switch (type.toUpperCase()) {
+//            case "1":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Framework");
+//                break;
+//            case "2":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Programming Language");
+//                break;
+//            case "3":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Development Tools");
+//                break;
+//            case "4":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("UI/UX");
+//                break;
+//            case "5":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Dev-Ops");
+//                break;
+//            case "6":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Documentation");
+//                break;
+//            case "7":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Hardware Skills");
+//                break;
+//            case "8":
+//                skillsetTypeList = skillsetTypeRepository.findAllBySkillsetTypeName("Tech Support");
+//                break;
+//            default:
+//                skillsetTypeList = skillsetTypeRepository.findAll();
+//                break;
+//        }
+//        return skillsetTypeList.isEmpty() ? Collections.emptyList() : skillsetTypeList;
+//    }
+
+    private static final Map<String, String> TYPE_MAP = Map.of(
+            "1", "Framework",
+            "2", "Programming Language",
+            "3", "Development Tools",
+            "4", "UI/UX",
+            "5", "Dev-Ops",
+            "6", "Documentation",
+            "7", "Hardware Skills",
+            "8", "Tech Support"
+    );
+
+    private List<Skillset> getSkillsetByType(String type) {
+        // Find the skillset type by name or ID.
+        SkillsetType skillsetType = null;
+        if (type.matches("^[0-9a-fA-F-]{36}$")) {
+            // It's a UUID, so we find by ID.
+            skillsetType = skillsetTypeRepository.findById(UUID.fromString(type)).orElse(null);
+        } else {
+            // It's not a UUID, so we find by name.
+            skillsetType = skillsetTypeRepository.findBySkillsetTypeName(type);
         }
-        return skillsetTypeList.isEmpty() ? Collections.emptyList() : skillsetTypeList;
+
+        // If the skillset type is found, get all skillsets with that type ID.
+        if (skillsetType != null) {
+            return skillsetRepository.findAllBySkillsetTypeId(skillsetType.getSkillsetTypeId());
+        } else {
+            // If the skillset type is not found, return an empty list.
+            return Collections.emptyList();
+        }
     }
 
 
@@ -123,14 +156,32 @@ public class MasterManagementController {
         return ResponseEntity.ok(level);
     }
 
+//    @GetMapping("/skill-set-option-lists")
+//    public ResponseEntity<List<SkillsetTypeDTO>> getSkillSetOptionLists(@RequestParam(name = "type", defaultValue = "ALL") String type) {
+//        List<SkillsetType> skillsetType = getSkillsetType(type);
+//        List<SkillsetTypeDTO> result = skillsetType.stream()
+//                .map(st -> new SkillsetTypeDTO(st.getSkillsetTypeId(), st.getSkillsetTypeName()))
+//                .collect(Collectors.toList());
+//
+//        return ResponseEntity.ok(result);
+//    }
+
     @GetMapping("/skill-set-option-lists")
-    public ResponseEntity<List<SkillsetTypeDTO>> getSkillSetOptionLists(@RequestParam(name = "type", defaultValue = "ALL") String type) {
-        List<SkillsetType> skillsetType = getSkillsetType(type);
-        List<SkillsetTypeDTO> result = skillsetType.stream()
-                .map(st -> new SkillsetTypeDTO(st.getSkillsetTypeId(), st.getSkillsetTypeName()))
+    public ResponseEntity<List<SkillsetDTO>> getSkillSetOptionLists(@RequestParam(name = "type", defaultValue = "ALL") String type) {
+        String skillsetType = TYPE_MAP.getOrDefault(type, type); // This will get the string value from the map, or use the type as is if it's not a number
+
+        List<Skillset> skillsets;
+        if ("ALL".equalsIgnoreCase(type)) {
+            skillsets = skillsetRepository.findAll(); // Assuming you have this method to find all skillsets
+        } else {
+            skillsets = getSkillsetByType(skillsetType); // The modified service method you'd call
+        }
+        List<SkillsetDTO> result = skillsets.stream()
+                .map(skillset -> new SkillsetDTO(skillset.getSkillsetId(), skillset.getSkillsetName()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
     }
+
 
 }
