@@ -61,7 +61,7 @@ public class MinioSrvc {
     return bMsg(bucket) + " of file " + filename;
   }
 
-  private String getLink(String bucket, String filename, Long expiry) {
+  public String getLink(String bucket, String filename, Long expiry) {
     try {
       return minio.getPresignedObjectUrl(
           GetPresignedObjectUrlArgs.builder()

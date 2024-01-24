@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -167,7 +168,9 @@ public class TalentController {
 
         TalentDTO dto = new TalentDTO();
         dto.setTalentId(talent.getTalentId());
-        dto.setTalentPhotoUrl(talent.getTalentPhotoUrl());
+
+        String photoUrl = minioSrvc.getLink("talent-center-app", talent.getTalentPhotoFilename(), TimeUnit.HOURS.toSeconds(1));
+        dto.setTalentPhotoUrl(photoUrl);
         dto.setTalentName(talent.getTalentName());
 
         if (talent.getTalentStatus() != null) {
