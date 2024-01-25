@@ -2,44 +2,30 @@ package com.tujuhsembilan.app.controller;
 
 import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.*;
-import com.tujuhsembilan.app.model.*;
+import com.tujuhsembilan.app.model.Talent;
+import com.tujuhsembilan.app.model.TalentMetadata;
 import com.tujuhsembilan.app.repository.*;
 import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import com.tujuhsembilan.app.service.SaveDataTalentService;
+import com.tujuhsembilan.app.service.TalentService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
+import lib.minio.MinioSrvc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-
-import lib.minio.MinioSrvc;
-
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/talent-management")
@@ -59,6 +45,9 @@ public class TalentController {
 
     @Autowired
     private MinioSrvc minioSrvc;
+
+    @Autowired
+    private TalentService talentService;
 
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
@@ -88,143 +77,18 @@ public class TalentController {
     @GetMapping("/talents")
     @Transactional
     public Page<TalentDTO> getAllTalents(
-            @RequestParam(value = "search", required = false) String search,
-            @RequestParam(value = "talentLevelName", required = false) String talentLevelName,
-            @RequestParam(value = "talentExperience", defaultValue = "talentExperience,desc") String talentExperience,
-            @RequestParam(value = "talentStatus", required = false) String talentStatus,
-            @RequestParam(value = "employeeStatus", required = false) String employeeStatus,
-            @RequestParam(value = "isActive", required = false) Boolean isActive,
-            @RequestParam(value = "talentName", required = false) String talentName,
-            @RequestParam(value = "tagsName", required = false) List<String> tagsName,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        TalentSearchDTO searchDTO = new TalentSearchDTO();
+        searchDTO.setPage(page);
+        searchDTO.setSize(size);
+        searchDTO.setSort(sort);
 
-        log.info("Received tagsName: {}", tagsName);
-
-        // Create a Specification based on search criteria
-        Specification<Talent> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (search != null && !search.trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("talentName")), "%" + search.toLowerCase() + "%"));
-            }
-            if (talentLevelName != null && !talentLevelName.trim().isEmpty()) {
-                predicates.add(cb.equal(root.get("talentLevel").get("talentLevelName"), talentLevelName));
-            }
-            if (talentStatus != null && !talentStatus.trim().isEmpty()) {
-                Join<Talent, TalentStatus> talentStatusJoin = root.join("talentStatusId");
-                String formattedTalentStatus = talentStatus.trim().replaceAll("\\s+", " ");
-                predicates.add(cb.equal(cb.lower(talentStatusJoin.get("talentStatus")), formattedTalentStatus.toLowerCase()));
-            }
-            if (tagsName != null && !tagsName.isEmpty()) {
-                Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets", JoinType.INNER);
-                Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset", JoinType.INNER);
-
-                List<Predicate> tagPredicates = new ArrayList<>();
-                for (String tag : tagsName) {
-                    tagPredicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tag.toLowerCase()));
-                }
-
-                predicates.add(cb.or(tagPredicates.toArray(new Predicate[0])));
-            }
-
-            if (isActive != null) {
-                predicates.add(cb.equal(root.get("isActive"), isActive));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Sort finalSort = Sort.unsorted();
-
-        if (talentExperience != null && !talentExperience.isEmpty()) {
-            String[] talentExperienceParams = talentExperience.split(",");
-            Sort talentExperienceSort = Sort.by(talentExperienceParams[0]);
-            if (talentExperienceParams.length > 1) {
-                talentExperienceSort = "asc".equalsIgnoreCase(talentExperienceParams[1]) ? talentExperienceSort.ascending() : talentExperienceSort.descending();
-            }
-            finalSort = talentExperienceSort.and(Sort.by("talentLevel.talentLevelName").descending());
-        }
-        if (talentName != null && !talentName.isEmpty()) {
-            String[] talentNameParams = talentName.split(",");
-            Sort talentNameSort = Sort.by(talentNameParams[0]);
-            talentNameSort = "asc".equalsIgnoreCase(talentNameParams[1]) ? talentNameSort.ascending() : talentNameSort.descending();
-            finalSort = finalSort.and(talentNameSort);
-            System.out.println("Name Sort: " + talentNameSort);
-        }
-
-        // Create a Pageable instance with sort
-        Pageable pageable = PageRequest.of(page, size, finalSort);
-
-        // Apply the Specification and Pageable to the query
-        Page<Talent> talentPage = talentRepository.findAll(spec, pageable);
-
-        // Map to DTOs and return
-        return talentPage.map(this::convertToDTO);
+        return talentService.getAllTalents(searchDTO);
     }
 
-
-    private TalentDTO convertToDTO(Talent talent) {
-
-        TalentDTO dto = new TalentDTO();
-        dto.setTalentId(talent.getTalentId());
-
-        String photoUrl = minioSrvc.getLink("talent-center-app", talent.getTalentPhotoFilename(), TimeUnit.HOURS.toSeconds(1));
-        dto.setTalentPhotoUrl(photoUrl);
-        dto.setTalentName(talent.getTalentName());
-
-        if (talent.getTalentStatus() != null) {
-            dto.setTalentStatus(talent.getTalentStatus().getTalentStatusName());
-        }
-
-        if (talent.getEmployeeStatus() != null){
-            dto.setEmployeeStatus(talent.getEmployeeStatus().getEmployeeStatusName());
-        }
-
-        dto.setTalentAvailability(talent.getTalentAvailability());
-        dto.setTalentExperience(talent.getTalentExperience());
-
-        if (talent.getTalentLevel() != null) {
-            dto.setTalentLevelName(talent.getTalentLevel().getTalentLevelName());
-        }
-
-        if (talent.getTalentPositions() != null) {
-            List<PositionDTO> positionDTOs = talent.getTalentPositions().stream()
-                    .filter(Objects::nonNull)
-                    .map(talentPosition -> {
-                        Position position = talentPosition.getPosition();
-                        if (position != null) {
-                            PositionDTO positionDTO = new PositionDTO();
-                            positionDTO.setPositionId(position.getPositionId());
-                            positionDTO.setPositionName(position.getPositionName());
-                            return positionDTO;
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            dto.setPositions(positionDTOs);
-        }
-
-        if(talent.getTalentSkillsets() != null){
-            List<SkillsetDTO> skillsetDTOs = talent.getTalentSkillsets().stream()
-                    .filter(Objects::nonNull)
-                    .map(talentSkillset -> {
-                        Skillset skillset = talentSkillset.getSkillset();
-                        if(skillset != null) {
-                            return new SkillsetDTO(skillset.getSkillsetId(), skillset.getSkillsetName());
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            dto.setSkillsets(skillsetDTOs);
-        }
-
-        dto.setIsActive(talent.getIsActive());
-
-        return dto;
-    }
 
     //Save Data Talent
     @PostMapping("/talents")

@@ -1,5 +1,6 @@
 package com.tujuhsembilan.app.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class TalentDTO {
     private String talentStatus;
     private String employeeStatus;
     private Boolean talentAvailability;
+    @JsonProperty("talentExperience")
     private Integer talentExperience;
     private String talentLevelName;
     private List<PositionDTO> positions = new ArrayList<>();
