@@ -69,16 +69,32 @@ public class TalentService {
                 predicates.add(cb.equal(cb.lower(talentStatusJoin.get("talentStatus")), formattedTalentStatus.toLowerCase()));
             }
             if (searchDTO.getTagsName() != null && !searchDTO.getTagsName().isEmpty()) {
-                Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets", JoinType.INNER);
-                Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset", JoinType.INNER);
+                // Ensure that we do not produce duplicates by using distinct
+                query.distinct(true);
 
-                List<jakarta.persistence.criteria.Predicate> tagPredicates = new ArrayList<>();
+                // Create a list to hold all the tag predicates
+                List<Predicate> tagPredicates = new ArrayList<>();
+
+                // Apply an 'AND' condition for each tag
                 for (String tag : searchDTO.getTagsName()) {
+                    // Create a separate join for each tag inside the loop
+                    Join<Talent, TalentSkillset> talentSkillsetJoin = root.join("talentSkillsets", JoinType.INNER);
+                    Join<TalentSkillset, Skillset> skillsetJoin = talentSkillsetJoin.join("skillset", JoinType.INNER);
+
+                    // Add the condition that the skillset name must match the tag, case-insensitively
                     tagPredicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tag.toLowerCase()));
                 }
 
-                predicates.add(cb.and(tagPredicates.toArray(new jakarta.persistence.criteria.Predicate[0])));
+                // Combine all tag predicates using 'AND'
+                Predicate allTagConditions = cb.conjunction();
+                for (Predicate tagPredicate : tagPredicates) {
+                    allTagConditions = cb.and(allTagConditions, tagPredicate);
+                }
+
+                // Add the combined 'AND' condition for tags to the main predicates list
+                predicates.add(allTagConditions);
             }
+
 
 
             if (searchDTO.getIsActive() != null) {
