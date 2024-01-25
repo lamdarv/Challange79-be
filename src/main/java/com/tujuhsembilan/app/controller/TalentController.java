@@ -79,11 +79,13 @@ public class TalentController {
     public Page<TalentDTO> getAllTalents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) List<String> tagsName,
             @RequestParam(required = false) String sort
     ) {
         TalentSearchDTO searchDTO = new TalentSearchDTO();
         searchDTO.setPage(page);
         searchDTO.setSize(size);
+        searchDTO.setTagsName(tagsName);
         searchDTO.setSort(sort);
 
         return talentService.getAllTalents(searchDTO);

@@ -9,7 +9,10 @@ import com.tujuhsembilan.app.repository.TalentRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import lib.minio.MinioSrvc;
 import lib.minio.exception.MinioServiceDownloadException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,11 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import lib.minio.MinioSrvc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +62,7 @@ public class TalentService {
                 log.info("Adding talent level predicate: {}", searchDTO.getTalentLevelName());
                 predicates.add(cb.equal(root.get("talentLevel").get("talentLevelName"), searchDTO.getTalentLevelName()));
             }
-            if (searchDTO.getTalentLevelName() != null && !searchDTO.getTalentLevelName().trim().isEmpty()) {
-                log.info("Adding talent level predicate: {}", searchDTO.getTalentLevelName());
-                predicates.add(cb.equal(root.get("talentLevel").get("talentLevelName"), searchDTO.getTalentLevelName()));
-            }
+
             if (searchDTO.getTalentStatus() != null && !searchDTO.getTalentStatus().trim().isEmpty()) {
                 Join<Talent, TalentStatus> talentStatusJoin = root.join("talentStatusId");
                 String formattedTalentStatus = searchDTO.getTalentStatus().trim().replaceAll("\\s+", " ");
@@ -82,7 +77,7 @@ public class TalentService {
                     tagPredicates.add(cb.equal(cb.lower(skillsetJoin.get("skillsetName")), tag.toLowerCase()));
                 }
 
-                predicates.add(cb.or(tagPredicates.toArray(new jakarta.persistence.criteria.Predicate[0])));
+                predicates.add(cb.and(tagPredicates.toArray(new jakarta.persistence.criteria.Predicate[0])));
             }
 
 
@@ -116,11 +111,7 @@ public class TalentService {
                     field = "talentLevel.talentLevelName";
                 }
 
-                // Memeriksa apakah field terkait dengan talentName
-                else if ("talentName".equals(field)) {
-                    // Tidak perlu modifikasi field untuk talentName
-                    // Dapat menambahkannya ke list orders langsung
-                }
+                //Tidak perlu memeriksa apakah field terkait dengan talentName karena sudah bisa menambahkannya ke list order langsung
 
                 // Menentukan arah pengurutan berdasarkan elemen kedua array params
                 String direction = params[1].equalsIgnoreCase("desc") ? "desc" : "asc";
@@ -133,42 +124,6 @@ public class TalentService {
         // Kembalikan objek Sort yang telah dibuat. Jika list orders kosong, kembalikan Sort yang tidak diurutkan.
         return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
     }
-
-
-
-//    private Sort createSort(TalentSearchDTO searchDTO) {
-//        Sort finalSort = Sort.unsorted();
-//
-//        if (searchDTO.getTalentExperience() != null && !searchDTO.getTalentExperience().isEmpty()) {
-//            String[] talentExperienceParams = searchDTO.getTalentExperience().split(",");
-//            Sort talentExperienceSort = Sort.by(talentExperienceParams[0]);
-//            if (talentExperienceParams.length > 1) {
-//                talentExperienceSort = "asc".equalsIgnoreCase(talentExperienceParams[1]) ? talentExperienceSort.ascending() : talentExperienceSort.descending();
-//            }
-//            finalSort = talentExperienceSort.and(Sort.by("talentLevel.talentLevelName").descending());
-////            finalSort = finalSort.and((talentExperienceSort));
-//        }
-//
-//        if (searchDTO.getTalentName() != null && !searchDTO.getTalentName().isEmpty()) {
-//            String[] talentNameParams = searchDTO.getTalentName().split(",");
-//            Sort talentNameSort = Sort.by(talentNameParams[0]);
-//            talentNameSort = "asc".equalsIgnoreCase(talentNameParams[1]) ? talentNameSort.ascending() : talentNameSort.descending();
-//            finalSort = finalSort.and(talentNameSort);
-//            System.out.println("Name Sort: " + talentNameSort);
-//        }
-//
-//        // Sort by Talent Level Name
-//        if (searchDTO.getTalentLevelName() != null && !searchDTO.getTalentLevelName().isEmpty()) {
-//            String[] talentLevelNameParams = searchDTO.getTalentLevelName().split(",");
-//            Sort talentLevelNameSort = Sort.by("talentLevel.talentLevelName");
-//            talentLevelNameSort = "asc".equalsIgnoreCase(talentLevelNameParams[1]) ? talentLevelNameSort.ascending() : talentLevelNameSort.descending();
-//            finalSort = finalSort.and(talentLevelNameSort);
-//            System.out.println("Talent Level Name Sort: " + talentLevelNameSort);
-//        }
-//
-//
-//        return finalSort;
-//    }
 
     private TalentDTO convertToDTO(Talent talent) {
         TalentDTO dto = new TalentDTO();
