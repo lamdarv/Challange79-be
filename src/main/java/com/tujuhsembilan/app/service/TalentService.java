@@ -41,6 +41,7 @@ public class TalentService {
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     // Display Talents
+    @Transactional
     public Page<TalentDTO> getAllTalents(TalentSearchDTO searchDTO) {
         log.info("Creating Specification...");
 
@@ -64,6 +65,7 @@ public class TalentService {
     }
 
     // Metode untuk membuat objek Specification<Talent> berdasarkan objek TalentSearchDTO
+    @Transactional
     private Specification<Talent> createSpecification(TalentSearchDTO searchDTO) {
         log.info("Creating Specification with searchDTO: {}", searchDTO);
 
@@ -133,6 +135,7 @@ public class TalentService {
     }
 
     // Metode untuk membuat objek Sort berdasarkan objek TalentSearchDTO
+    @Transactional
     private Sort createSort(TalentSearchDTO searchDTO) {
         // Log untuk menandakan pembuatan sort dengan searchDTO yang diberikan
         log.info("Creating Sort with searchDTO: {}", searchDTO);
@@ -170,6 +173,7 @@ public class TalentService {
     }
 
     // Metode ini mengonversi objek Talent ke objek TalentDTO
+    @Transactional
     private TalentDTO convertToDTO(Talent talent) {
         // Membuat objek baru dari kelas TalentDTO
         TalentDTO dto = new TalentDTO();
@@ -324,7 +328,7 @@ public class TalentService {
         try {
             // Mencari objek TalentMetadata berdasarkan talentId yang diberikan
             TalentMetadata talentMetadata = talentMetadataRepository.findById(request.getTalentId())
-                    // Melemparkan RuntimeException jika tidak ditemukan
+                    // Throw RuntimeException jika tidak ditemukan
                     .orElseThrow(() -> new RuntimeException("Talent Metadata not found!"));
 
             // Menambah satu ke nilai cvCounter pada objek TalentMetadata

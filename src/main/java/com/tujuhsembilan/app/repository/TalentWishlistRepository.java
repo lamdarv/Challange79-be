@@ -1,5 +1,6 @@
 package com.tujuhsembilan.app.repository;
 
+import com.tujuhsembilan.app.model.Client;
 import com.tujuhsembilan.app.model.Talent;
 import com.tujuhsembilan.app.model.TalentWishlist;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,16 +15,16 @@ import java.util.UUID;
 
 @Repository
 public interface TalentWishlistRepository extends JpaRepository<TalentWishlist, UUID> {
-//    Optional<TalentWishlist> findById(UUID id);
-//    Optional<Talent> findTalentNameByTalentId(UUID talentId);
     @Query("SELECT t FROM TalentWishlist w JOIN w.talent t WHERE t.talentId = :talentId")
     Optional<Talent> findTalentByTalentId(@Param("talentId") UUID talentId);
 
-//    @Query("SELECT w FROM TalentWishlist w WHERE w.clientId = :clientId")
-//    List<TalentWishlist> findAllByClientId(@Param("clientId") UUID clientId);
     List<TalentWishlist> findAllByClient_ClientId(UUID clientId);
 
     @Modifying
     @Query("UPDATE TalentWishlist w SET w.isActive = false WHERE w.talentWishlistId = :talentWishlistId")
     void deactivateWishlist(@Param("talentWishlistId") UUID talentWishlistId);
+
+    // Metode untuk mencari objek TalentWishlist berdasarkan talent dan client
+    TalentWishlist findByTalentAndClient(Talent talent, Client client);
+
 }

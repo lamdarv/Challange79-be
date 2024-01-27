@@ -8,8 +8,6 @@ import com.tujuhsembilan.app.dto.talentRequest.DisplayRequestTalentDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistRequestDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistResponseDTO;
 import com.tujuhsembilan.app.model.Client;
-import com.tujuhsembilan.app.model.Talent;
-import com.tujuhsembilan.app.model.TalentWishlist;
 import com.tujuhsembilan.app.model.User;
 import com.tujuhsembilan.app.repository.ClientRepository;
 import com.tujuhsembilan.app.repository.TalentRepository;
@@ -31,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 //import java.util.logging.Logger;
@@ -75,46 +72,11 @@ public class TalentWishlistController {
     public ResponseEntity<String> addTalentToWishlist(@RequestBody TalentWishlistDTO talentWishlistDTO,
                                                       HttpServletRequest request) {
         try {
-            UUID userId = getUserIdFromToken(request);
-            if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token.");
-            }
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-            // Ensure that User has an associated Client
-            if (user.getClient() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User does not have an associated client.");
-            }
-
-            UUID clientId = user.getClient().getClientId();
-            Client client = clientRepository.findById(clientId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
-
-            // Find the Talent entity
-            Talent talent = talentRepository.findById(talentWishlistDTO.getTalentId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Talent not found"));
-
-            TalentWishlist talentWishlist = TalentWishlist.builder()
-                    .talent(talent)
-                    .client(client)
-                    .wishlistDate(LocalDateTime.now())
-                    .isActive(true)
-                    .build();
-
-            talentWishlistRepository.save(talentWishlist);
-
-            return ResponseEntity.ok(talent.getTalentName() + " with talentId " + talent.getTalentId() + " successfully added to wishlist! The wishlistId is: " + talentWishlist.getTalentWishlistId());
-
+            String result = talentWishlistService.addTalentToWishlist(talentWishlistDTO, request);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return new ResponseEntity<>("Error adding talent to wishlist! " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private UUID getUserIdFromToken(HttpServletRequest servletRequest) {
-        String token = jwtUtils.extractTokenFromRequest(servletRequest);
-        return (token != null && jwtUtils.validateToken(token)) ? jwtUtils.getUserIdFromToken(token) : null;
     }
 
     //GET Display Daftar Wishlist Talent By User Id
@@ -123,30 +85,12 @@ public class TalentWishlistController {
     public ResponseEntity<Page<DisplayWishlistTalentDTO>> getWishlistTalentsByUserId(
             @RequestParam UUID user_id,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size){
+            @RequestParam(defaultValue = "10") int size) {
 
         log.info("Looking up wishlist talents for user ID: {}", user_id);
-        Optional<User> optionalUser = userRepository.findById(user_id);
-        if(optionalUser.isPresent()){
-            User user = optionalUser.get();
-            Client client = user.getClient();
-
-            if (client != null){
-                UUID clientId = client.getClientId();
-                log.info("Client ID: {}", clientId);
-
-                Pageable pageable = PageRequest.of(page, size);
-                Page<DisplayWishlistTalentDTO> result = displayWishlistTalentService.getAllWishlistTalentsByClientId(clientId, true, pageable);
-
-                return ResponseEntity.ok(result);
-            } else {
-                log.warn("No client associated with user ID: {}", user_id);
-                return ResponseEntity.notFound().build(); // atau return appropriate error response
-            }
-        } else {
-            log.warn("User not found for ID: {}", user_id);
-            return ResponseEntity.notFound().build();
-        }
+        return userRepository.findById(user_id)
+                .map(user -> displayWishlistTalentService.getWishlistTalentsByUser(user, page, size))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     //POST Remove Wishlist
@@ -194,7 +138,7 @@ public class TalentWishlistController {
     public ResponseEntity<WishlistResponseDTO> createWishlistRequest(@RequestBody WishlistRequestDTO request) {
         try {
             UUID userId = request.getUserId();
-            WishlistResponseDTO response = talentWishlistService.handleNewWishlistRequest(userId, request.getWishlist());
+            WishlistResponseDTO response = talentWishlistService.handleNewWishlistRequest(request.getWishlist());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new WishlistResponseDTO(null, "An error occurred while processing the request."));

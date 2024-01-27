@@ -1,21 +1,24 @@
 package com.tujuhsembilan.app.service;
 
+import com.tujuhsembilan.app.controller.TalentWishlistController;
 import com.tujuhsembilan.app.dto.DisplayWishlistTalentDTO;
 import com.tujuhsembilan.app.dto.PositionDTO;
 import com.tujuhsembilan.app.dto.SkillsetDTO;
-import com.tujuhsembilan.app.model.Talent;
-import com.tujuhsembilan.app.model.TalentPosition;
-import com.tujuhsembilan.app.model.TalentSkillset;
-import com.tujuhsembilan.app.model.TalentWishlist;
+import com.tujuhsembilan.app.model.*;
 import com.tujuhsembilan.app.repository.DisplayWishlistTalentRepository;
 import com.tujuhsembilan.app.repository.PositionRepository;
 import com.tujuhsembilan.app.repository.SkillsetRepository;
 import com.tujuhsembilan.app.repository.TalentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -36,7 +39,26 @@ public class DisplayWishlistTalentService {
 
     @Autowired
     private SkillsetRepository skillsetRepository;
+    private static final Logger log = LoggerFactory.getLogger(TalentWishlistController.class);
 
+
+    @Transactional
+    public ResponseEntity<Page<DisplayWishlistTalentDTO>> getWishlistTalentsByUser(User user, int page, int size) {
+        Client client = user.getClient();
+
+        if (client != null) {
+            UUID clientId = client.getClientId();
+            log.info("Client ID: {}", clientId);
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<DisplayWishlistTalentDTO> result = getAllWishlistTalentsByClientId(clientId, true, pageable);
+
+            return ResponseEntity.ok(result);
+        } else {
+            log.warn("No client associated with user ID: {}", user.getUserId());
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     public Page<DisplayWishlistTalentDTO> getAllWishlistTalentsByClientId(UUID clientId, boolean isActive, Pageable pageable) {
         Page<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findByClient_ClientIdAndIsActive(clientId,true ,pageable); // Metode baru
@@ -97,49 +119,4 @@ public class DisplayWishlistTalentService {
         }
         return skillsetDTOs;
     }
-
-
-//    public List<DisplayWishlistTalentDTO> getAllWishlistTalents(){
-//        List<TalentWishlist> talentWishlists = displayWishlistTalentRepository.findAll();
-//        List<DisplayWishlistTalentDTO> displayWishlistTalentDTOs = new ArrayList<>();
-//
-//        for (TalentWishlist talentWishlist : talentWishlists){
-//            DisplayWishlistTalentDTO dto = new DisplayWishlistTalentDTO();
-//            dto.setWishlistId(talentWishlist.getTalentWishlistId());
-//            dto.setTalentId(talentWishlist.getTalentId());
-//
-//            Talent talent = talentRepository.findById(talentWishlist.getTalentId()).orElse(null);
-//            if (talent != null) {
-//                dto.setTalentName(talent.getTalentName());
-//                dto.setTalentAvailability(talent.getTalentAvailability());
-//                dto.setTalentExperience(talent.getTalentExperience());
-//                dto.setTalentLevel(talent.getTalentLevelId().getTalentLevelName());
-//
-//                List<PositionDTO> positionDTOs = new ArrayList<>();
-//                for (TalentPosition talentPosition : talent.getTalentPositions()) {
-//                    if (talentPosition != null && talentPosition.getPosition() != null) {
-//                        PositionDTO positionDTO = new PositionDTO();
-//                        positionDTO.setPositionId(talentPosition.getPosition().getPositionId());
-//                        positionDTO.setPositionName(talentPosition.getPosition().getPositionName());
-//                        positionDTOs.add(positionDTO);
-//                    }
-//                }
-//                dto.setPositions(positionDTOs);
-//
-//                List<SkillsetDTO> skillsetDTOs = new ArrayList<>();
-//                for (TalentSkillset talentSkillset : talent.getTalentSkillsets()) {
-//                    if (talentSkillset != null && talentSkillset.getSkillset() != null){
-//                        SkillsetDTO skillsetDTO = new SkillsetDTO(
-//                                talentSkillset.getSkillset().getSkillsetId(),
-//                                talentSkillset.getSkillset().getSkillsetName()
-//                        );
-//                        skillsetDTOs.add(skillsetDTO);
-//                    }
-//                }
-//                dto.setSkillsets(skillsetDTOs);
-//            }
-//            displayWishlistTalentDTOs.add(dto);
-//        }
-//        return displayWishlistTalentDTOs;
-//    }
 }
