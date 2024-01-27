@@ -24,20 +24,22 @@ import java.util.stream.Collectors;
 
 @Service
 public class DisplayRequestTalentService {
-    @Autowired
-    private DisplayRequestTalentRepository displayRequestTalentRepository;
+    private final DisplayRequestTalentRepository displayRequestTalentRepository;
+
+    private final TalentRepository talentRepository;
 
     @Autowired
-    private TalentRepository talentRepository;
-
-    @Autowired
-    private PositionRepository positionRepository;
-
-    @Autowired
-    private SkillsetRepository skillsetRepository;
+    public DisplayRequestTalentService(
+            DisplayRequestTalentRepository displayRequestTalentRepository,
+            TalentRepository talentRepository
+    ){
+        this.displayRequestTalentRepository = displayRequestTalentRepository;
+        this.talentRepository = talentRepository;
+    }
 
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
+    @Transactional
     public Page<DisplayRequestTalentDTO> getTalentRequestByClientId(UUID clientId, Pageable pageable, String status){
         Page<TalentRequest> talentRequests;
 
@@ -59,7 +61,7 @@ public class DisplayRequestTalentService {
                 .collect(Collectors.toList());
         return new PageImpl<>(list, pageable, talentRequests.getTotalElements());
     }
-
+    @Transactional
     private DisplayRequestTalentDTO mapToDTO(TalentRequest talentRequest) {
         DisplayRequestTalentDTO dto = new DisplayRequestTalentDTO();
         dto.setTalentRequestId(talentRequest.getTalentRequestId());
@@ -83,7 +85,7 @@ public class DisplayRequestTalentService {
 
         return dto;
     }
-
+    @Transactional
     private List<PositionDTO> mapPositions(List<TalentPosition> talentPositions) {
         List<PositionDTO> positionDTOs = new ArrayList<>();
         for (TalentPosition talentPosition : talentPositions) {
@@ -96,7 +98,7 @@ public class DisplayRequestTalentService {
         }
         return positionDTOs;
     }
-
+    @Transactional
     private List<SkillsetDTO> mapSkillsets(List<TalentSkillset> talentSkillsets) {
         List<SkillsetDTO> skillsetDTOs = new ArrayList<>();
         for (TalentSkillset talentSkillset : talentSkillsets) {

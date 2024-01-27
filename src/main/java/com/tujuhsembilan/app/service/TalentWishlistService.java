@@ -4,6 +4,7 @@ import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.TalentWishlistDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistItemDTO;
 import com.tujuhsembilan.app.dto.talentRequest.WishlistResponseDTO;
+import com.tujuhsembilan.app.exception.UserNotFoundException;
 import com.tujuhsembilan.app.model.*;
 import com.tujuhsembilan.app.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -66,7 +68,7 @@ public class TalentWishlistService {
 
             // Mencari objek User berdasarkan userID
             User user = userRepository.findById(userId)
-                    // Melemparkan ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
+                    // Throw ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             // Memastikan bahwa User memiliki Client terkait
@@ -79,12 +81,12 @@ public class TalentWishlistService {
 
             // Mencari objek Client berdasarkan clientID
             Client client = clientRepository.findById(clientId)
-                    // Melemparkan ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
+                    // Throw ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
 
             // Mencari objek Talent berdasarkan talentID dari objek TalentWishlistDTO
             Talent talent = talentRepository.findById(talentWishlistDTO.getTalentId())
-                    // Melemparkan ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
+                    // Throw ResponseStatusException dengan status NOT_FOUND jika tidak ditemukan
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Talent not found"));
 
             // Mencari objek TalentWishlist berdasarkan talentID dan clientID
@@ -111,7 +113,7 @@ public class TalentWishlistService {
             return talent.getTalentName() + " with talentId " + talent.getTalentId() + " successfully added to wishlist! The wishlistId is: " + talentWishlist.getTalentWishlistId();
 
         } catch (Exception e) {
-            // Melemparkan RuntimeException jika terjadi kesalahan selama proses penambahan bakat ke dalam daftar keinginan
+            // Throw RuntimeException jika terjadi kesalahan selama proses penambahan bakat ke dalam daftar keinginan
             throw new RuntimeException("Error adding talent to wishlist! " + e.getMessage(), e);
         }
     }
@@ -142,20 +144,38 @@ public class TalentWishlistService {
     }
 
     @Transactional
-    public void removeAllWishlist(UUID clientId) {
-        // Mengambil semua wishlist berdasarkan clientId
+    public void removeAllWishlistByUserId(UUID userId) throws UserNotFoundException {
+        // Search pengguna berdasarkan ID.
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        // Memeriksa apakah pengguna ditemukan, jika tidak, lemparkan exception UserNotFoundException.
+        if (optionalUser.isEmpty()) {
+            throw new UserNotFoundException("User not found for ID: " + userId);
+        }
+
+        // Mendapatkan objek pengguna dari Optional.
+        User user = optionalUser.get();
+
+        // Mendapatkan ID klien dari objek pengguna.
+        UUID clientId = user.getClient().getClientId();
+
+        // Memanggil metode service untuk menghapus semua daftar keinginan berdasarkan ID klien.
+        removeAllWishlist(clientId);
+    }
+    @Transactional
+    private void removeAllWishlist(UUID clientId) {
+        // Mengambil semua wishlists berdasarkan ID client.
         List<TalentWishlist> wishlists = talentWishlistRepository.findAllByClient_ClientId(clientId);
 
-        // Iterasi melalui daftar wishlist
+        // Iterasi setiap wishlists
         for (TalentWishlist wishlist : wishlists) {
-            // Memeriksa apakah wishlist aktif
+            // Memeriksa apakah wishlist aktif.
             if (wishlist.getIsActive()) {
-                // Menonaktifkan wishlist dengan mengakses metode khusus pada repository
+                // Deactivate wishlist dengan mengakses metode repository khusus.
                 talentWishlistRepository.deactivateWishlist(wishlist.getTalentWishlistId());
             }
         }
     }
-
 
     @Transactional
     public WishlistResponseDTO handleNewWishlistRequest(List<WishlistItemDTO> wishlistItems) {

@@ -15,14 +15,18 @@ import java.util.UUID;
 
 @Repository
 public interface TalentWishlistRepository extends JpaRepository<TalentWishlist, UUID> {
+    // Metode query JPA untuk mencari objek Talent berdasarkan talentID dari tabel TalentWishlist.
     @Query("SELECT t FROM TalentWishlist w JOIN w.talent t WHERE t.talentId = :talentId")
     Optional<Talent> findTalentByTalentId(@Param("talentId") UUID talentId);
 
+    // Metode query JPA untuk mencari daftar objek TalentWishlist berdasarkan clientId dari tabel TalentWishlist.
     List<TalentWishlist> findAllByClient_ClientId(UUID clientId);
 
+    // Metode query JPA untuk menonaktifkan objek TalentWishlist berdasarkan talentWishlistId di tabel TalentWishlist.
     @Modifying
     @Query("UPDATE TalentWishlist w SET w.isActive = false WHERE w.talentWishlistId = :talentWishlistId")
     void deactivateWishlist(@Param("talentWishlistId") UUID talentWishlistId);
+
 
     // Metode untuk mencari objek TalentWishlist berdasarkan talent dan client
     TalentWishlist findByTalentAndClient(Talent talent, Client client);

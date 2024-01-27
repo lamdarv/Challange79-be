@@ -31,13 +31,21 @@ import java.util.stream.Collectors;
 
 @Service
 public class TalentService {
-    @Autowired
-    private TalentRepository talentRepository;
+    private final TalentRepository talentRepository;
+    private final TalentMetadataRepository talentMetadataRepository;
+    private final MinioSrvc minioSrvc;
 
     @Autowired
-    private TalentMetadataRepository talentMetadataRepository;
-    @Autowired
-    private MinioSrvc minioSrvc;
+    public TalentService(
+        TalentRepository talentRepository,
+        TalentMetadataRepository talentMetadataRepository,
+        MinioSrvc minioSrvc
+    ){
+        this.talentRepository = talentRepository;
+        this.talentMetadataRepository = talentMetadataRepository;
+        this.minioSrvc = minioSrvc;
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     // Display Talents
