@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.servlet.http.HttpServletResponse;
 import lib.minio.MinioSrvc;
 import lib.minio.exception.MinioServiceDownloadException;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ public class TalentService {
         Pageable pageable = PageRequest.of(searchDTO.getPage(), searchDTO.getSize(), finalSort);
 
         log.info("Calling talentRepository.findAll...");
-        
+
         // Memanggil metode findAll dari talentRepository dengan menggunakan Specification dan Pageable yang sudah dibuat
         Page<Talent> talentPage = talentRepository.findAll(spec, pageable);
 
@@ -289,5 +290,57 @@ public class TalentService {
             throw new RuntimeException("Error updating profile counter: " + e.getMessage(), e);
         }
     }
+
+    //POST Download CV
+    @Transactional
+    public void downloadCV(DownloadCVRequestDTO request, HttpServletResponse response) {
+        try {
+            // Mencari objek Talent berdasarkan talentId yang diberikan
+            Talent talent = talentRepository.findById(request.getTalentId())
+                    // Melemparkan RuntimeException jika tidak ditemukan
+                    .orElseThrow(() -> new RuntimeException("Talent not found"));
+
+            // Mendapatkan nama file CV dari objek Talent
+            String talentCVFilename = talent.getTalentCVFilename();
+
+            // Melemparkan RuntimeException jika nama file CV tidak tersedia atau kosong
+            if (talentCVFilename == null || talentCVFilename.isEmpty()) {
+                throw new RuntimeException("CV not available for this talent");
+            }
+
+            // Nama bucket untuk penyimpanan Minio
+            String bucketName = "talent-center-app";
+
+            // Memanggil metode view dari MinioService untuk menampilkan file CV ke dalam HttpServletResponse
+            minioSrvc.view(response, bucketName, talentCVFilename);
+        } catch (Exception e) {
+            // Throw RuntimeException jika terjadi kesalahan selama proses pengunduhan CV
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public String incrementCVDownloadCount(DownloadCVCountRequestDTO request) {
+        try {
+            // Mencari objek TalentMetadata berdasarkan talentId yang diberikan
+            TalentMetadata talentMetadata = talentMetadataRepository.findById(request.getTalentId())
+                    // Melemparkan RuntimeException jika tidak ditemukan
+                    .orElseThrow(() -> new RuntimeException("Talent Metadata not found!"));
+
+            // Menambah satu ke nilai cvCounter pada objek TalentMetadata
+            talentMetadata.setCvCounter(talentMetadata.getCvCounter() + 1);
+
+            // Menyimpan perubahan ke dalam repositori
+            talentMetadataRepository.save(talentMetadata);
+
+            // Mengembalikan pesan sukses berisi informasi tentang jumlah unduhan CV yang sudah ditingkatkan
+            return "CV Download Count " + talentMetadata.getCvCounter();
+        } catch (Exception e) {
+            // Throw RuntimeException jika terjadi kesalahan selama proses peningkatan jumlah unduhan CV
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+
 
 }

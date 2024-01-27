@@ -2,14 +2,11 @@ package com.tujuhsembilan.app.controller;
 
 import com.tujuhsembilan.app.configuration.JwtUtils;
 import com.tujuhsembilan.app.dto.*;
-import com.tujuhsembilan.app.model.Talent;
-import com.tujuhsembilan.app.model.TalentMetadata;
 import com.tujuhsembilan.app.repository.*;
 import com.tujuhsembilan.app.service.DisplayRequestTalentService;
 import com.tujuhsembilan.app.service.SaveDataTalentService;
 import com.tujuhsembilan.app.service.TalentService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lib.minio.MinioSrvc;
@@ -94,6 +91,7 @@ public class TalentController {
 
     //Save Data Talent
     @PostMapping("/talents")
+    @Transactional
     public ResponseEntity<String> createTalent(
             @RequestParam("talentPhoto") MultipartFile talentPhoto,
             @RequestParam("talentCV") MultipartFile talentCV,
@@ -166,18 +164,8 @@ public class TalentController {
     @Transactional
     public ResponseEntity<?> downloadCV(@RequestBody DownloadCVRequestDTO request, HttpServletResponse response) {
         try {
-            Talent talent = talentRepository.findById(request.getTalentId())
-                    .orElseThrow(() -> new RuntimeException("Talent not found"));
-
-            String talentCVFilename = talent.getTalentCVFilename();
-            if (talentCVFilename == null || talentCVFilename.isEmpty()){
-                throw new RuntimeException("CV not available for this talent");
-            }
-
-            String bucketName = "talent-center-app";
-            minioSrvc.view(response, bucketName, talentCVFilename);
+            talentService.downloadCV(request, response);
             return ResponseEntity.ok("CV successfully downloaded");
-
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -187,12 +175,8 @@ public class TalentController {
     @Transactional
     public ResponseEntity<?> incrementCVDownloadCount(@RequestBody DownloadCVCountRequestDTO request) {
         try {
-            TalentMetadata talentMetadata = talentMetadataRepository.findById(request.getTalentId())
-                    .orElseThrow(() -> new RuntimeException("Talent Metadata not found!"));
-
-            talentMetadata.setCvCounter(talentMetadata.getCvCounter() + 1);
-            talentMetadataRepository.save(talentMetadata);
-            return ResponseEntity.ok("CV Download Count " + talentMetadata.getCvCounter());
+            String result = talentService.incrementCVDownloadCount(request);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
