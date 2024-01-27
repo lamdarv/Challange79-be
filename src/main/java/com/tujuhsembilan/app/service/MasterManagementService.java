@@ -43,6 +43,7 @@ public class MasterManagementService {
     // Master Position
     @Transactional
     public List<PositionDTO> getAllPositionOptions() {
+        // Mengambil semua posisi dari repositori dan mengonversinya ke dalam List PositionDTO
         return positionRepository.findAll().stream()
                 .map(position -> new PositionDTO(position.getPositionId(), position.getPositionName()))
                 .collect(Collectors.toList());
@@ -51,9 +52,13 @@ public class MasterManagementService {
     // Master Experience
     @Transactional
     public List<TalentExperienceDTO> getAllExperienceOptions(int size) {
+        // Membuat objek Pageable untuk mengambil halaman pertama dengan ukuran tertentu
         Pageable pageable = PageRequest.of(0, size);
+
+        // Mengambil semua talent dari repositori dan mengonversinya ke dalam List TalentExperienceDTO
         return talentRepository.findAll(pageable).stream()
                 .map(talent -> {
+                    // Membuat objek TalentExperienceDTO dan mengatur propertinya berdasarkan bakat
                     TalentExperienceDTO dto = new TalentExperienceDTO();
                     dto.setExperience(talent.getTalentExperience());
                     return dto;
@@ -64,6 +69,7 @@ public class MasterManagementService {
     // Master Level
     @Transactional
     public List<TalentLevelDTO> getAllLevelOptions() {
+        // Mengambil semua talent level dari repositori dan mengonversinya ke dalam List TalentLevelDTO
         return talentLevelRepository.findAll().stream()
                 .map(level -> new TalentLevelDTO(level.getTalentLevelId(), level.getTalentLevelName()))
                 .collect(Collectors.toList());
@@ -84,25 +90,34 @@ public class MasterManagementService {
     // Master Skillsets
     @Transactional
     public List<Skillset> getSkillsetByType(String type) {
+        // Memeriksa apakah type adalah "ALL" (case-insensitive)
         if ("ALL".equalsIgnoreCase(type)) {
+            // Jika ya, mengembalikan semua skillset dari repositori
             return skillsetRepository.findAll();
         } else {
+            // Jika tidak, memanggil metode findSkillsetsByType dengan type yang diberikan
             return findSkillsetsByType(type);
         }
     }
 
+
     // Master Skillsets
+    @Transactional
     private List<Skillset> findSkillsetsByType(String type) {
         SkillsetType skillsetType;
+
+        // Pengecekan apakah tipe adalah UUID valid
         if (type.matches("^[0-9a-fA-F-]{36}$")) {
+            // Jika ya, mencari SkillsetType berdasarkan UUID
             skillsetType = skillsetTypeRepository.findById(UUID.fromString(type)).orElse(null);
         } else {
+            // Jika tidak, mencari SkillsetType berdasarkan nama tipe dari map
             String skillsetTypeName = TYPE_MAP.getOrDefault(type, type);
             skillsetType = skillsetTypeRepository.findBySkillsetTypeName(skillsetTypeName);
         }
 
+        // Mengembalikan semua Skillset berdasarkan SkillsetType atau empty list jika SkillsetType tidak ditemukan
         return (skillsetType != null) ? skillsetRepository.findAllBySkillsetTypeId(skillsetType.getSkillsetTypeId()) : Collections.emptyList();
     }
-
 
 }
