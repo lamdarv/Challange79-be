@@ -13,7 +13,11 @@ import java.util.UUID;
 @SpringBootApplication
 @Repository
 public interface MostFrequentSkillsetRepository extends JpaRepository<MostFrequentSkillset, UUID> {
+
+    // Mencari lima MostFrequentSkillset teratas yang memiliki counter tidak null, diurutkan berdasarkan counter secara descending
     List<MostFrequentSkillset> findTop5ByCounterIsNotNullOrderByCounterDesc();
 
+    // Mencari MostFrequentSkillset berdasarkan Skillset, mengembalikan Optional
     Optional<MostFrequentSkillset> findBySkillset(Skillset skillset);
 }
+

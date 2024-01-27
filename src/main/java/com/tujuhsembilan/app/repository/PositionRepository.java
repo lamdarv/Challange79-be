@@ -8,5 +8,4 @@ import java.util.UUID;
 
 @Repository
 public interface PositionRepository extends JpaRepository<Position, UUID> {
-    // You can add custom database queries here if needed
 }

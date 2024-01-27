@@ -13,8 +13,11 @@ import java.util.UUID;
 
 @Repository
 public interface DisplayWishlistTalentRepository extends JpaRepository<TalentWishlist, UUID> {
+
+    // Query untuk mencari halaman TalentWishlist berdasarkan clientId dan isActive, dengan paginasi
     Page<TalentWishlist> findByClient_ClientIdAndIsActive(UUID clientId, boolean isActive, Pageable pageable);
 }
+
 
 
 

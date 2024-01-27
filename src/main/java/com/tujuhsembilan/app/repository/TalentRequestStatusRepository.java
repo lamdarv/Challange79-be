@@ -9,5 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface TalentRequestStatusRepository extends JpaRepository<TalentRequestStatus, UUID> {
+    // Mencari TalentRequestStatus berdasarkan nama status
     Optional<TalentRequestStatus> findByTalentRequestStatusName(String statusName);
 }

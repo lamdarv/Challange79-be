@@ -11,10 +11,9 @@ import java.util.UUID;
 
 @Repository
 public interface SkillsetTypeRepository extends JpaRepository<SkillsetType, UUID> {
-    List<SkillsetType> findAllBySkillsetTypeId(UUID skillsetTypeId);
-    List<SkillsetType> findAllBySkillsetTypeName(String skillsetTypeName);
-
-    // New
+    // Mencari SkillsetType berdasarkan id, mengembalikan Optional
     Optional<SkillsetType> findById(UUID id);
+
+    // Mencari SkillsetType berdasarkan skillsetTypeName
     SkillsetType findBySkillsetTypeName(String name);
 }

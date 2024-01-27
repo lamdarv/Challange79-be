@@ -9,28 +9,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 public class SkillsetService {
+    private final SkillsetRepository skillsetRepository;
+    private final MostFrequentSkillsetRepository mostFrequentSkillsetRepository;
 
     @Autowired
-    private SkillsetRepository skillsetRepository;
-
-    @Autowired
-    private MostFrequentSkillsetRepository mostFrequentSkillsetRepository;
+    public SkillsetService(
+            SkillsetRepository skillsetRepository,
+            MostFrequentSkillsetRepository mostFrequentSkillsetRepository
+    ){
+       this.skillsetRepository = skillsetRepository;
+       this.mostFrequentSkillsetRepository = mostFrequentSkillsetRepository;
+    }
 
     @Transactional
     public MostFrequentSkillsetDTO updateOrInsertTag(String tagName) {
+        // Mencari Skillset berdasarkan nama, atau membuat Skillset baru jika tidak ditemukan
         Skillset skillsetEntity = skillsetRepository.findBySkillsetName(tagName)
                 .orElseGet(() -> {
                     Skillset newSkillset = new Skillset();
                     newSkillset.setSkillsetName(tagName);
-                    newSkillset.setIsActive(true); // assuming new tags are active by default
-                    // Save the new Skillset to generate skillset_id
+                    newSkillset.setIsActive(true);
+
+                    // Menyimpan Skillset baru untuk menghasilkan skillset_id
                     return skillsetRepository.save(newSkillset);
                 });
 
+        // Mencari MostFrequentSkillset berdasarkan Skillset, atau membuat baru jika tidak ditemukan
         MostFrequentSkillset mostFrequentSkillsetEntity = mostFrequentSkillsetRepository
                 .findBySkillset(skillsetEntity)
                 .orElseGet(() -> {
@@ -40,16 +46,18 @@ public class SkillsetService {
                     return newMostFrequentSkillset;
                 });
 
+        // Jika MostFrequentSkillset sudah ada, tingkatkan counter
         if (mostFrequentSkillsetEntity.getMostFrequentSkillsetId() != null) {
-            // If it's an existing MostFrequentSkillset, just increment the counter
             mostFrequentSkillsetEntity.setCounter(mostFrequentSkillsetEntity.getCounter() + 1);
         }
-        // Save the MostFrequentSkillset to the database
+
+        // Menyimpan MostFrequentSkillset ke database
         mostFrequentSkillsetEntity = mostFrequentSkillsetRepository.save(mostFrequentSkillsetEntity);
 
-        // Convert to DTO
+        // Mengonversi ke DTO
         return convertToDTO(mostFrequentSkillsetEntity);
     }
+
 
     private MostFrequentSkillsetDTO convertToDTO(MostFrequentSkillset mostFrequentSkillset) {
         MostFrequentSkillsetDTO dto = new MostFrequentSkillsetDTO();

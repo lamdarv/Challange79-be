@@ -12,17 +12,18 @@ import java.util.UUID;
 @Repository
 public interface TalentRequestRepository extends JpaRepository<TalentRequest, UUID> {
 
-    // Query to find TalentRequests by talent name, ignoring case, with pagination
+    // Query untuk mencari TalentRequests berdasarkan nama talent, dengan mengabaikan case, dengan paginasi
     Page<TalentRequest> findByTalentWishlist_Talent_TalentNameContainingIgnoreCase(String talentName, Pageable pageable);
 
-    // Query to find TalentRequests by a list of statuses, with pagination
+    // Query untuk mencari TalentRequests berdasarkan daftar status, dengan paginasi
     Page<TalentRequest> findByTalentRequestStatus_TalentRequestStatusNameIn(List<String> statusFilters, Pageable pageable);
 
-    // Query to find TalentRequests by both talent name (ignoring case) and a list of statuses, with pagination
+    // Query untuk mencari TalentRequests berdasarkan nama talent (mengabaikan case) dan daftar status, dengan paginasi
     Page<TalentRequest> findByTalentWishlist_Talent_TalentNameContainingIgnoreCaseAndTalentRequestStatus_TalentRequestStatusNameIn(
             String talentName, List<String> statusFilters, Pageable pageable);
 
-    // New Query to find by agencyName
+    // Query baru untuk mencari berdasarkan agencyName
     Page<TalentRequest> findByTalentWishlist_Talent_TalentNameContainingIgnoreCaseOrTalentWishlist_Client_AgencyNameContainingIgnoreCase(
             String talentName, String agencyName, Pageable pageable);
 }
+

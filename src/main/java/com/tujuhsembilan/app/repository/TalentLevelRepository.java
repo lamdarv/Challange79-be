@@ -11,6 +11,8 @@ import java.util.UUID;
 
 @Repository
 public interface TalentLevelRepository extends JpaRepository<TalentLevel, UUID> {
+
+    // Query untuk mencari nama talent level berdasarkan talentLevelId
     @Query("SELECT tl.talentLevelName FROM TalentLevel tl WHERE tl.talentLevelId = :talentLevelId")
     Optional<String> findTalentLevelNameByTalentLevelId(@Param("talentLevelId") UUID talentLevelId);
 }

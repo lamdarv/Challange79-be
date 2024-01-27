@@ -16,17 +16,4 @@ import java.util.UUID;
 
 @Repository
 public interface TalentRepository extends JpaRepository<Talent, UUID>, JpaSpecificationExecutor<Talent> {
-    Optional<Talent> findByTalentId(UUID talentId);
-
-    // Add this method for debugging
-    @Query("SELECT t FROM Talent t LEFT JOIN FETCH t.talentLevel tl WHERE tl.talentLevelName = :#{#searchDTO.talentLevelName}")
-    String getGeneratedQuery(@Param("searchDTO") TalentSearchDTO searchDTO);
-
-    @Query(value = "SELECT t.* FROM Talent t JOIN Talent_Level tl ON t.talent_level_id = tl.talent_level_id " +
-            "ORDER BY CASE " +
-            "WHEN tl.talent_level_name = 'Junior' THEN 1 " +
-            "WHEN tl.talent_level_name = 'Middle' THEN 2 " +
-            "WHEN tl.talent_level_name = 'Senior' THEN 3 END",
-            nativeQuery = true)
-    Page<Talent> findAllTalentsSortedByLevel(Pageable pageable);
 }

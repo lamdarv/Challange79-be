@@ -11,10 +11,13 @@ import java.util.UUID;
 
 @Repository
 public interface DisplayRequestTalentRepository extends JpaRepository<TalentRequest, UUID> {
-//    List<TalentRequest> findByClientId(UUID clientId);
+
+    // Query untuk mencari halaman TalentRequest berdasarkan clientId, dengan paginasi
     Page<TalentRequest> findByTalentWishlist_Client_ClientId(UUID clientId, Pageable pageable);
+
+    // Query untuk mencari halaman TalentRequest berdasarkan clientId dan nama status, dengan paginasi
     Page<TalentRequest> findByTalentWishlist_Client_ClientIdAndTalentRequestStatus_TalentRequestStatusName(
             UUID clientId, String statusName, Pageable pageable);
-
 }
+
 

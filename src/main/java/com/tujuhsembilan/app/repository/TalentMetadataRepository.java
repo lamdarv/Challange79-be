@@ -8,6 +8,9 @@ import java.util.UUID;
 
 @Repository
 public interface TalentMetadataRepository extends JpaRepository<TalentMetadata, UUID> {
+
+    // Mencari TalentMetadata berdasarkan talentId
     TalentMetadata findByTalent_TalentId(UUID talentId);
 }
+
 
