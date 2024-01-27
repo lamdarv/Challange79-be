@@ -2,12 +2,7 @@ package com.tujuhsembilan.app.controller;
 
 import com.tujuhsembilan.app.dto.DisplayTalentApprovalDTO;
 import com.tujuhsembilan.app.dto.TalentApprovalDTO;
-import com.tujuhsembilan.app.model.TalentRequest;
-import com.tujuhsembilan.app.model.TalentRequestStatus;
-import com.tujuhsembilan.app.repository.TalentRequestRepository;
-import com.tujuhsembilan.app.repository.TalentRequestStatusRepository;
 import com.tujuhsembilan.app.service.TalentApprovalService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,8 +15,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/talent-management")
 public class TalentApprovalController {
+    private final TalentApprovalService talentApprovalService;
+
     @Autowired
-    private TalentApprovalService talentApprovalService;
+    public TalentApprovalController(
+            TalentApprovalService talentApprovalService
+    ){
+        this.talentApprovalService = talentApprovalService;
+    }
 
     //API PUT Approve/Reject Persetujuan Talent
     @PutMapping("/talent-approvals")
@@ -57,16 +58,4 @@ public class TalentApprovalController {
                 talentName, agencyName, status, page, size, sortBy);
         return ResponseEntity.ok(displayTalentApprovalDTOs);
     }
-
-
-//    public ResponseEntity<String> approveTalentRequest(@RequestBody TalentApprovalDTO talentApprovalDTO) {
-//        try {
-//            talentApprovalService.approveTalentRequest(talentApprovalDTO.getTalentRequestId());
-//            return ResponseEntity.ok(talentApprovalDTO.getTalentRequestId() + " successfully approved!");
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error approving request with id " + talentApprovalDTO.getTalentRequestId());
-//        }
-//    }
-
 }

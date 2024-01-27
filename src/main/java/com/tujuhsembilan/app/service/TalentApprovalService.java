@@ -1,14 +1,14 @@
 package com.tujuhsembilan.app.service;
 
 import com.tujuhsembilan.app.dto.DisplayTalentApprovalDTO;
-import com.tujuhsembilan.app.dto.TalentApprovalDTO;
 import com.tujuhsembilan.app.model.TalentRequest;
 import com.tujuhsembilan.app.model.TalentRequestStatus;
 import com.tujuhsembilan.app.repository.TalentRequestRepository;
 import com.tujuhsembilan.app.repository.TalentRequestStatusRepository;
 import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
-import org.checkerframework.checker.units.qual.A;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,19 +19,22 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 @Service
 public class TalentApprovalService {
-    @Autowired
-    private TalentRequestRepository talentRequestRepository;
+    private final TalentRequestRepository talentRequestRepository;
+
+    private final TalentRequestStatusRepository talentRequestStatusRepository;
 
     @Autowired
-    private TalentRequestStatusRepository talentRequestStatusRepository;
+    public TalentApprovalService(
+            TalentRequestRepository talentRequestRepository,
+            TalentRequestStatusRepository talentRequestStatusRepository
+    ){
+        this.talentRequestRepository = talentRequestRepository;
+        this.talentRequestStatusRepository = talentRequestStatusRepository;
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(TalentApprovalService.class);
 
@@ -70,7 +73,7 @@ public class TalentApprovalService {
             sortBy = "requestDate";
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, sortBy != null ? sortBy : "requestDate");
+        Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, sortBy);
         Page<TalentRequest> talentRequestPage;
 
         if (statusFilters == null || statusFilters.isEmpty()) {
