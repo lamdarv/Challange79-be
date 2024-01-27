@@ -150,16 +150,10 @@ public class TalentController {
     //API PUT Count Profile
     @PutMapping("/talents/profile-count")
     @Transactional
-    public ResponseEntity<String> putCountProfile(@RequestBody ProfileCounterDTO profileCounterDTO){
+    public ResponseEntity<String> putCountProfile(@RequestBody ProfileCounterDTO profileCounterDTO) {
         try {
-            TalentMetadata talentMetadata = talentMetadataRepository.findById(profileCounterDTO.getTalentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Talent not found with id: " + profileCounterDTO.getTalentId()));
-
-            talentMetadata.setProfileCounter(talentMetadata.getProfileCounter() + 1);
-            talentMetadataRepository.save(talentMetadata);
-
-            return ResponseEntity.ok("Counting profile with id " + talentMetadata.getTalent().getTalentId() + " is " + talentMetadata.getProfileCounter());
-
+            String result = talentService.updateProfileCounter(profileCounterDTO);
+            return ResponseEntity.ok(result);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
