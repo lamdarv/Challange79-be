@@ -56,35 +56,38 @@ public class UserService {
     public ResponseEntity<?> registerUser(UserRegistrationDTO request) {
         log.info("Processing registration for : {}", request.getEmail());
         try {
-            // Check for email duplication
+            // Check untuk duplikasi email
             if (userRepository.existsByEmail(request.getEmail())) {
                 return ResponseEntity.badRequest().body("Email already exists");
             }
 
-            // Find the role "Client"
+            // Cari role dengan nama "Client"
             Role defaultRole = roleRepository.findFirstByRoleName("Client");
             if (defaultRole == null) {
                 return ResponseEntity.badRequest().body("Error: Role 'Client' not found");
             }
 
-            // Find ClientPosition by name
+            // Cari ClientPosition berdasarkan nama
             Optional<ClientPosition> optionalClientPosition = clientPositionRepository.findByClientPositionName(request.getClientPositionName());
             if (optionalClientPosition.isEmpty()) {
                 return ResponseEntity.badRequest().body("Client Position not found");
             }
 
-            // Create and save a new User
+            // Buat dan simpan user baru
             User newUser = createUser(request, defaultRole);
             User savedUser = userRepository.save(newUser);
 
-            // Create and save a new Client
+            // Buat dan simpan client baru
             Client newClient = createClient(request, savedUser, optionalClientPosition.get());
             clientRepository.save(newClient);
 
+            // Mengembalikan respons sukses jika registrasi berhasil
             return ResponseEntity.ok("User registered with ID: " + savedUser.getUserId());
         } catch (DataIntegrityViolationException e) {
+            // Menangani kesalahan integritas data, misalnya, jika ada keterbatasan unik pada database
             return ResponseEntity.badRequest().body("Error: User registration failed. Please check your input.");
         } catch (Exception e) {
+            // Menangani kesalahan umum yang tidak terduga
             log.error("Unexpected error during user registration", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error registering user");
         }
@@ -93,6 +96,7 @@ public class UserService {
     //For Register
     @Transactional
     private User createUser(UserRegistrationDTO request, Role defaultRole) {
+        // Membuat dan mengembalikan objek User baru menggunakan builder pattern
         return User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -106,6 +110,7 @@ public class UserService {
     //For Register
     @Transactional
     private Client createClient(UserRegistrationDTO request, User savedUser, ClientPosition clientPosition) {
+        // Membuat dan mengembalikan objek Client baru menggunakan builder pattern
         Client newClient = Client.builder()
                 .clientName(request.getFirstName() + " " + request.getLastName())
                 .email(request.getEmail())
@@ -125,15 +130,23 @@ public class UserService {
     public ResponseEntity<Map<String, Object>> signIn(String email, String password) {
         log.info("Processing sign-in for email: {}", email);
 
+        // Mencari user berdasarkan email
         Optional<User> optionalUser = userRepository.findByEmail(email);
+
+        // Jika user ditemukan berdasarkan email
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+
+            // Memeriksa apakah password yang diinput sesuai dengan password di database
             if (passwordEncoder.matches(password, user.getPassword())) {
+                // Jika sesuai, mengembalikan respons sukses sign-in
                 return ResponseEntity.ok(createSuccessSignInResponse(user));
             } else {
+                // Jika password tidak sesuai, mengembalikan respons kesalahan dengan status UNAUTHORIZED
                 return createErrorResponse("Invalid password", HttpStatus.UNAUTHORIZED);
             }
         } else {
+            // Jika user tidak ditemukan berdasarkan email, mengembalikan respons kesalahan dengan status NOT_FOUND
             return createErrorResponse("User not found", HttpStatus.NOT_FOUND);
         }
     }
@@ -141,10 +154,14 @@ public class UserService {
     // For SignIn
     @Transactional
     private Map<String, Object> createSuccessSignInResponse(User user) {
+        // Generate token JWT menggunakan utilitas jwtUtils
         String token = jwtUtils.generateToken(user);
+
+        // Mendapatkan roleId dan clientId dari objek User
         UUID roleId = user.getRole().getRoleId();
         UUID clientId = user.getClient().getClientId();
 
+        // Membuat objek Map sebagai respons sign-in yang berhasil
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
         response.put("user_id", user.getUserId());
@@ -157,8 +174,13 @@ public class UserService {
     // For SignIn
     @Transactional
     private ResponseEntity<Map<String, Object>> createErrorResponse(String message, HttpStatus status) {
+        // Membuat objek Map untuk menyimpan pesan kesalahan
         Map<String, Object> response = new HashMap<>();
+
+        // Menambahkan pesan kesalahan ke objek Map
         response.put("message", message);
+
+        // Mengembalikan ResponseEntity yang berisi objek Map dan status kesalahan yang diberikan
         return new ResponseEntity<>(response, status);
     }
 }
