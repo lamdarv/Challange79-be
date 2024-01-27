@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -92,7 +93,7 @@ public class MasterManagementService {
 
     // Master Skillsets
     private List<Skillset> findSkillsetsByType(String type) {
-        SkillsetType skillsetType = null;
+        SkillsetType skillsetType;
         if (type.matches("^[0-9a-fA-F-]{36}$")) {
             skillsetType = skillsetTypeRepository.findById(UUID.fromString(type)).orElse(null);
         } else {
