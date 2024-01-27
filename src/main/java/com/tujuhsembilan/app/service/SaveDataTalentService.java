@@ -24,38 +24,46 @@ import org.slf4j.LoggerFactory;
 @Service
 public class SaveDataTalentService {
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
-    @Autowired
-    private TalentRepository talentRepository;
+    private final TalentRepository talentRepository;
+
+    private final TalentStatusRepository talentStatusRepository;
+
+    private final TalentLevelRepository talentLevelRepository;
+
+    private final EmployeeStatusRepository employeeStatusRepository;
+
+    private final PositionRepositoryForCreateTalent positionRepositoryForCreateTalent;
+
+    private final SkillsetRepositoryForCreateTalent skillsetRepositoryForCreateTalent;
+
+    private final TalentPositionRepository talentPositionRepository;
+
+    private final TalentSkillsetRepository talentSkillsetRepository;
+
+    private final MinioSrvc minioSrvc;
 
     @Autowired
-    private PositionRepository positionRepository;
-
-    @Autowired
-    private SkillsetRepository skillsetRepository;
-
-    @Autowired
-    private TalentStatusRepository talentStatusRepository;
-
-    @Autowired
-    private TalentLevelRepository talentLevelRepository;
-
-    @Autowired
-    private EmployeeStatusRepository employeeStatusRepository;
-
-    @Autowired
-    private PositionRepositoryForCreateTalent positionRepositoryForCreateTalent;
-
-    @Autowired
-    private SkillsetRepositoryForCreateTalent skillsetRepositoryForCreateTalent;
-
-    @Autowired
-    private TalentPositionRepository talentPositionRepository;
-
-    @Autowired
-    private TalentSkillsetRepository talentSkillsetRepository;
-
-    @Autowired
-    private MinioSrvc minioSrvc;
+    public SaveDataTalentService(
+            TalentRepository talentRepository,
+            TalentStatusRepository talentStatusRepository,
+            TalentLevelRepository talentLevelRepository,
+            EmployeeStatusRepository employeeStatusRepository,
+            PositionRepositoryForCreateTalent positionRepositoryForCreateTalent,
+            SkillsetRepositoryForCreateTalent skillsetRepositoryForCreateTalent,
+            TalentPositionRepository talentPositionRepository,
+            TalentSkillsetRepository talentSkillsetRepository,
+            MinioSrvc minioSrvc
+    ){
+        this.talentRepository = talentRepository;
+        this.talentStatusRepository = talentStatusRepository;
+        this.talentLevelRepository = talentLevelRepository;
+        this.employeeStatusRepository = employeeStatusRepository;
+        this.positionRepositoryForCreateTalent = positionRepositoryForCreateTalent;
+        this.skillsetRepositoryForCreateTalent = skillsetRepositoryForCreateTalent;
+        this.talentPositionRepository = talentPositionRepository;
+        this.talentSkillsetRepository = talentSkillsetRepository;
+        this.minioSrvc = minioSrvc;
+    }
 
     public void createTalent(MultipartFile talentPhoto, MultipartFile talentCV, SaveDataTalentDTO saveDataTalentDTO, List<UUID> positionIds, List<UUID> skillsetIds){
         // Validasi ekstensi file untuk foto dan CV
