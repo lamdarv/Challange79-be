@@ -40,42 +40,56 @@ public class DisplayRequestTalentService {
     private static final Logger log = LoggerFactory.getLogger(DisplayRequestTalentService.class);
 
     @Transactional
-    public Page<DisplayRequestTalentDTO> getTalentRequestByClientId(UUID clientId, Pageable pageable, String status){
+    public Page<DisplayRequestTalentDTO> getTalentRequestByClientId(UUID clientId, Pageable pageable, String status) {
         Page<TalentRequest> talentRequests;
 
+        // Memeriksa apakah status tidak null dan tidak kosong
         if (status != null && !status.isEmpty()) {
+            // Jika status tersedia, gunakan query kustom berdasarkan clientId dan status
             talentRequests = displayRequestTalentRepository.findByTalentWishlist_Client_ClientIdAndTalentRequestStatus_TalentRequestStatusName(clientId, status, pageable);
         } else {
+            // Jika status tidak tersedia, gunakan query berdasarkan clientId tanpa status
             talentRequests = displayRequestTalentRepository.findByTalentWishlist_Client_ClientId(clientId, pageable);
         }
 
+        // Log jumlah talent requests yang diambil
         log.info("Fetched {} talent requests for client with ID: {}", talentRequests.getNumberOfElements(), clientId);
 
+        // Log rinci jika trace level diaktifkan
         if (log.isTraceEnabled()) {
             talentRequests.forEach(talentRequest -> log.trace("Talent Request: {}", talentRequest));
         }
 
+        // Mengonversi hasil ke DTO dan membungkusnya dalam PageImpl
         List<DisplayRequestTalentDTO> list = talentRequests.getContent()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
         return new PageImpl<>(list, pageable, talentRequests.getTotalElements());
     }
+
     @Transactional
     private DisplayRequestTalentDTO mapToDTO(TalentRequest talentRequest) {
         DisplayRequestTalentDTO dto = new DisplayRequestTalentDTO();
+
+        // Mengatur properti DTO berdasarkan TalentRequest
         dto.setTalentRequestId(talentRequest.getTalentRequestId());
         dto.setTalentRequestDate(talentRequest.getRequestDate());
         dto.setTalentRequestStatus(talentRequest.getTalentRequestStatus().getTalentRequestStatusName());
 
+        // Mengambil informasi Talent dari TalentRequest
         Talent talent = talentRepository.findById(talentRequest.getTalentWishlist().getTalent().getTalentId()).orElse(null);
+
+        // Memeriksa apakah Talent ditemukan
         if (talent != null) {
+            // Mengatur properti DTO berdasarkan informasi Talent
             dto.setTalentId(talent.getTalentId());
             dto.setTalentName(talent.getTalentName());
             dto.setTalentExperience(talent.getTalentExperience());
             dto.setTalentAvailability(talent.getTalentAvailability());
             dto.setTalentLevel(talent.getTalentLevel().getTalentLevelName());
 
+            // Mapping posisi dan skillset ke DTO
             List<PositionDTO> positionDTOs = mapPositions(talent.getTalentPositions());
             dto.setPositions(positionDTOs);
 
@@ -85,11 +99,16 @@ public class DisplayRequestTalentService {
 
         return dto;
     }
+
     @Transactional
     private List<PositionDTO> mapPositions(List<TalentPosition> talentPositions) {
         List<PositionDTO> positionDTOs = new ArrayList<>();
+
+        // Iterasi melalui setiap TalentPosition
         for (TalentPosition talentPosition : talentPositions) {
+            // Memeriksa keberadaan TalentPosition dan Position
             if (talentPosition != null && talentPosition.getPosition() != null) {
+                // Jika keduanya ada, buat PositionDTO dan tambahkan ke list
                 PositionDTO positionDTO = new PositionDTO();
                 positionDTO.setPositionId(talentPosition.getPosition().getPositionId());
                 positionDTO.setPositionName(talentPosition.getPosition().getPositionName());
@@ -98,11 +117,16 @@ public class DisplayRequestTalentService {
         }
         return positionDTOs;
     }
+
     @Transactional
     private List<SkillsetDTO> mapSkillsets(List<TalentSkillset> talentSkillsets) {
         List<SkillsetDTO> skillsetDTOs = new ArrayList<>();
+
+        // Iterasi melalui setiap TalentSkillset
         for (TalentSkillset talentSkillset : talentSkillsets) {
+            // Memeriksa keberadaan TalentSkillset dan Skillset
             if (talentSkillset != null && talentSkillset.getSkillset() != null) {
+                // Jika keduanya ada, buat SkillsetDTO dan tambahkan ke list
                 SkillsetDTO skillsetDTO = new SkillsetDTO(
                         talentSkillset.getSkillset().getSkillsetId(),
                         talentSkillset.getSkillset().getSkillsetName()
@@ -112,4 +136,5 @@ public class DisplayRequestTalentService {
         }
         return skillsetDTOs;
     }
+
 }
